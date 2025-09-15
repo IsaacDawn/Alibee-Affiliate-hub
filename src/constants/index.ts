@@ -48,16 +48,16 @@ export const SEARCH_MODES = {
   hot: 'hot',
 } as const;
 
-const isLocal =
-  typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1");
+// const isLocal =
+//   typeof window !== "undefined" &&
+//   (window.location.hostname === "localhost" ||
+//     window.location.hostname === "127.0.0.1");
 
 export const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  (isLocal
-    ? "http://127.0.0.1:8080"
-    : "https://alibee-affiliate-api.onrender.com");
+import.meta.env.VITE_API_BASE_URL ||
+  (['localhost','127.0.0.1'].includes(window.location.hostname)
+    ? 'http://127.0.0.1:8080'
+    : 'https://alibee-affiliate-api.onrender.com');
 
 const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '';        // مثلا '/api'
 const HEALTH_PATH      = import.meta.env.VITE_API_HEALTH_PATH   || '/health';
@@ -67,8 +67,8 @@ const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/products';
 // const UNSAVE_PATH      = import.meta.env.VITE_API_UNSAVE_PATH    || '/unsave';
 // const DEMO_PATH        = import.meta.env.VITE_API_DEMO_PATH      || '/demo';
 
-const join = (b: string, p: string) => `${b.replace(/\/+$/, '')}/${p.replace(/^\/+/, '')}`;
-const withPrefix = (p: string) => (API_PREFIX ? join(API_PREFIX, p) : p);
+const join = (b:string,p:string)=>`${b.replace(/\/+$/,'')}/${p.replace(/^\/+/,'')}`;
+const withPrefix = (p:string)=> API_PREFIX ? join(API_PREFIX, p) : p;
 
 export const API_ENDPOINTS = {
   BASE_URL,
@@ -77,11 +77,9 @@ export const API_ENDPOINTS = {
   PRODUCTS: join(BASE_URL, withPrefix(PRODUCTS_PATH)),
   SAVE_PRODUCT:   join(BASE_URL, withPrefix('/save')),
   UNSAVE_PRODUCT: join(BASE_URL, withPrefix('/unsave')),
-
-  // برای سازگاری با کدهای قدیمی
+  // برای سازگاری
   SEARCH: join(BASE_URL, withPrefix(PRODUCTS_PATH)),
 };
-
 export default API_ENDPOINTS;
 export const DEFAULT_PAGE_SIZE = 20;
 export const INFINITE_SCROLL_THRESHOLD = 0.1;
