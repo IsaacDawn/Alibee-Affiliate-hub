@@ -69,7 +69,7 @@ function useProducts(arg1?: any, arg2?: any) {
           page: String(nextPage || 1),
           pageSize: String(pageSize || 20),
         });
-        const res = await fetch(`${API_ENDPOINTS.PRODUCTS}?${params.toString()}`);
+        const res = await fetch(`${API_ENDPOINTS.SEARCH}?${params.toString()}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data: ProductsResp = await res.json();
         const newItems = Array.isArray(data.items) ? data.items : [];
