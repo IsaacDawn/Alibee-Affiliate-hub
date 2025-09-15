@@ -31,7 +31,7 @@ export function LazyProductCard({
       },
       {
         threshold: 0.1, // Trigger when 10% of the card is visible
-        rootMargin: "50px", // Start loading 50px before the card comes into view
+        rootMargin: "100px", // Start loading 100px before the card comes into view for better UX
       }
     );
 

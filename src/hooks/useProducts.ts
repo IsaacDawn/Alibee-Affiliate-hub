@@ -22,20 +22,21 @@ type StatsResp = {
 function useProducts(arg1?: any, arg2?: any) {
   // استخراج q و pageSize از ورودی‌های مختلف
   let initialQ = "";
-  let initialPageSize = 20;
+  let initialPageSize = 10; // کاهش pageSize برای lazy loading بهتر
 
   if (typeof arg1 === "string" || arg1 == null) {
     initialQ = (arg1 as string) || "";
-    initialPageSize = Number(arg2 ?? 20) || 20;
+    initialPageSize = Number(arg2 ?? 10) || 10;
   } else {
     const f = arg1 || {};
     initialQ = f.q ?? f.query ?? "";
-    initialPageSize = Number(f.pageSize ?? f.limit ?? 20) || 20;
+    initialPageSize = Number(f.pageSize ?? f.limit ?? 10) || 10;
   }
 
   const [q, setQ] = useState<string>(initialQ);
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(initialPageSize);
+  const [filters, setFilters] = useState<any>(arg1 && typeof arg1 === "object" ? arg1 : {});
 
   const [items, setItems] = useState<Product[]>([]);
   const [hasMore, setHasMore] = useState<boolean>(false);
@@ -68,21 +69,37 @@ function useProducts(arg1?: any, arg2?: any) {
         const params = new URLSearchParams({
           ...(q ? { q } : {}),
           page: String(nextPage || 1),
-          pageSize: String(pageSize || 20),
+          pageSize: String(pageSize || 10),
         });
+        
+        // Add additional filters if they exist
+        if (filters) {
+          if (filters.hasVideo) params.append("hasVideo", "true");
+          if (filters.categoryId) params.append("categoryId", filters.categoryId);
+          if (filters.sort) params.append("sort", filters.sort);
+        }
         const res = await fetch(`${API_ENDPOINTS.SEARCH}?${params.toString()}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data: ProductsResp = await res.json();
         const newItems = Array.isArray(data.items) ? data.items : [];
         setHasMore(Boolean(data.hasMore));
-        setItems((prev) => (replace ? newItems : [...prev, ...newItems]));
+        setItems((prev) => {
+          if (replace) {
+            return newItems;
+          } else {
+            // حذف محصولات تکراری بر اساس product_id
+            const existingIds = new Set(prev.map(item => item.product_id));
+            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.product_id));
+            return [...prev, ...uniqueNewItems];
+          }
+        });
       } catch (e: any) {
         setError(e?.message || "Failed to fetch");
       } finally {
         setLoading(false);
       }
     },
-    [q, pageSize]
+    [q, pageSize, filters]
   );
 
   // ✅ overload سازگار:
@@ -105,8 +122,8 @@ function useProducts(arg1?: any, arg2?: any) {
   // ✅ loadMore قبلی حفظ
   const loadMore = useCallback(async () => {
     const next = page + 1;
+    setPage(next);  // ابتدا page را به‌روزرسانی کن
     await _fetchProducts(next, false);
-    setPage(next);
   }, [page, _fetchProducts]);
 
   // ✅ سازگار با دو شکل فراخوانی:
@@ -119,11 +136,11 @@ function useProducts(arg1?: any, arg2?: any) {
     setSavedProductsCount((c) => Math.max(0, c + (savedFlag ? 1 : -1)));
   }
 
-  // وقتی q یا pageSize عوض شد، از صفحه 1 دوباره بیار
+  // وقتی q، pageSize یا filters عوض شد، از صفحه 1 دوباره بیار
   useEffect(() => {
     setPage(1);
     _fetchProducts(1, true);
-  }, [q, pageSize, _fetchProducts]);
+  }, [q, pageSize, filters, _fetchProducts]);
 
   return useMemo(
     () => ({
@@ -136,11 +153,13 @@ function useProducts(arg1?: any, arg2?: any) {
       pageSize,
       q,
       savedProductsCount,
+      filters,
 
       // setters
       setQ,
       setPageSize,
       setSavedProductsCount,
+      setFilters,
 
       // actions
       fetchProducts, // (overloaded)
@@ -156,6 +175,8 @@ function useProducts(arg1?: any, arg2?: any) {
       pageSize,
       q,
       savedProductsCount,
+      filters,
+      setFilters,
       fetchProducts,
       loadMore,
       handleSave,

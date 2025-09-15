@@ -36,7 +36,8 @@ export function AffiliatorShell({ currency }: AffiliatorShellProps) {
     handleSave,
     savedProductsCount,
     setQ,
-  } = useProducts(filters);
+    setFilters: setProductsFilters,
+  } = useProducts();
 
   // Remove useStats hook since SystemStatus and StatsCard handle their own data
 
@@ -58,10 +59,15 @@ export function AffiliatorShell({ currency }: AffiliatorShellProps) {
         {/* Unified Search & Filters */}
         <UnifiedSearchFilters
           onSearch={(query) => {
-            setFilters(prev => ({ ...prev, q: query }));
+            const newFilters = { ...filters, q: query };
+            setFilters(newFilters);
             setQ(query); // Update the useProducts hook's internal q state
+            setProductsFilters(newFilters); // Update the useProducts hook's filters
           }}
-          onFiltersChange={setFilters}
+          onFiltersChange={(newFilters) => {
+            setFilters(newFilters);
+            setProductsFilters(newFilters); // Update the useProducts hook's filters
+          }}
           filters={filters}
           loading={loading}
         />
@@ -114,7 +120,7 @@ export function AffiliatorShell({ currency }: AffiliatorShellProps) {
             <div className="md:hidden space-y-4">
               {items.map((it, index) => (
                 <LazyProductCard
-                  key={it.product_id}
+                  key={`${it.product_id}-${index}`}
                   item={it}
                   currency={currency}
                   index={index}
@@ -127,7 +133,7 @@ export function AffiliatorShell({ currency }: AffiliatorShellProps) {
             <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {items.map((it, index) => (
                 <LazyProductCard
-                  key={it.product_id}
+                  key={`${it.product_id}-${index}`}
                   item={it}
                   currency={currency}
                   index={index}

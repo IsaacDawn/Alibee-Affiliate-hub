@@ -29,7 +29,7 @@ export function InfiniteScroll({
 
     observerRef.current = new IntersectionObserver(handleObserver, {
       threshold: 0.1,
-      rootMargin: "100px", // Start loading 100px before reaching the bottom
+      rootMargin: "200px", // Start loading 200px before reaching the bottom for better UX
     });
 
     observerRef.current.observe(element);
