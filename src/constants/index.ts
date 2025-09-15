@@ -66,13 +66,12 @@ export const API_ENDPOINTS = {
   BASE_URL,
   HEALTH: join(BASE_URL, '/health'),
   STATS: join(BASE_URL, '/stats'),
-  PRODUCTS: join(BASE_URL, '/products'),
+  // PRODUCTS: join(BASE_URL, '/products'),
   SAVE_PRODUCT: join(BASE_URL, '/save'),
   UNSAVE_PRODUCT: join(BASE_URL, '/unsave'),
   DEMO: join(BASE_URL, '/demo'),
   SEARCH: join(BASE_URL, "/products"), // بعضی کدها از SEARCH استفاده می‌کنند
-  SAVE: join(BASE_URL, "/save"),
-  UNSAVE: join(BASE_URL, "/unsave"),
+
 };
 export default API_ENDPOINTS;
 export const DEFAULT_PAGE_SIZE = 20;

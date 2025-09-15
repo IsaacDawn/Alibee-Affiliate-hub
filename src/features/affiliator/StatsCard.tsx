@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_ENDPOINTS } from "../../constants";
 
 interface Stats {
   totalProducts: number;
@@ -18,7 +19,7 @@ export function StatsCard({ savedProductsCount }: StatsCardProps) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch("${API_ENDPOINTS.BASE_URL}/stats");
+        const response = await fetch(API_ENDPOINTS.STATS);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
