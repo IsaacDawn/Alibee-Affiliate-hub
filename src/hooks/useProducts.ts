@@ -14,6 +14,7 @@ type ProductsResp = {
 type StatsResp = {
   saved_products?: number | string;
   savedCount?: number | string;
+  savedProducts?: number | string;
   error?: unknown;
 };
 
@@ -50,7 +51,7 @@ function useProducts(arg1?: any, arg2?: any) {
         if (res.ok) {
           const s: StatsResp = await res.json();
           const toNum = (v: any) => (v == null ? 0 : Number(v) || 0);
-          setSavedProductsCount(toNum(s.saved_products ?? s.savedCount));
+          setSavedProductsCount(toNum(s.saved_products ?? s.savedCount ?? s.savedProducts));
         }
       } catch {
         /* ignore */
