@@ -1,0 +1,85 @@
+/* Mobile-specific styles */
+/* This file contains all mobile-specific styling to prevent conflicts */
+
+/* Mobile Text Sizes - 2x Larger */
+.mobile-text-xs { @apply text-sm; }
+.mobile-text-sm { @apply text-base; }
+.mobile-text-base { @apply text-lg; }
+.mobile-text-lg { @apply text-xl; }
+.mobile-text-xl { @apply text-2xl; }
+.mobile-text-2xl { @apply text-3xl; }
+.mobile-text-3xl { @apply text-4xl; }
+
+/* Mobile Padding - 2x Larger */
+.mobile-p-2 { @apply p-4; }
+.mobile-p-3 { @apply p-6; }
+.mobile-p-4 { @apply p-8; }
+.mobile-p-5 { @apply p-10; }
+.mobile-p-6 { @apply p-12; }
+
+/* Mobile Margins - 2x Larger */
+.mobile-mx-2 { @apply mx-4; }
+.mobile-mx-4 { @apply mx-8; }
+.mobile-mx-6 { @apply mx-12; }
+
+/* Mobile Spacing - 2x Larger */
+.mobile-space-y-2 { @apply space-y-4; }
+.mobile-space-y-4 { @apply space-y-8; }
+.mobile-space-y-6 { @apply space-y-12; }
+
+/* Mobile Grid */
+.mobile-grid-cols-1 { @apply grid-cols-1; }
+.mobile-grid-cols-2 { @apply grid-cols-2; }
+
+/* Mobile Flex */
+.mobile-flex-col { @apply flex-col; }
+.mobile-flex-row { @apply flex-row; }
+
+/* Mobile Sizes - 2x Larger */
+.mobile-w-16 { @apply w-32; }
+.mobile-w-20 { @apply w-40; }
+.mobile-h-16 { @apply h-32; }
+.mobile-h-20 { @apply h-40; }
+
+/* Mobile Aspect Ratios */
+.mobile-aspect-square { @apply aspect-square; }
+
+/* Responsive Classes - 2x Larger Mobile */
+.responsive-text-xs { @apply text-sm md:text-xs; }
+.responsive-text-sm { @apply text-base md:text-xs; }
+.responsive-text-base { @apply text-lg md:text-sm; }
+.responsive-text-lg { @apply text-xl md:text-base; }
+.responsive-text-xl { @apply text-2xl md:text-lg; }
+.responsive-text-2xl { @apply text-3xl md:text-xl; }
+.responsive-text-3xl { @apply text-4xl md:text-2xl; }
+
+.responsive-p-2 { @apply p-4 md:p-2; }
+.responsive-p-3 { @apply p-6 md:p-2; }
+.responsive-p-4 { @apply p-8 md:p-3; }
+.responsive-p-5 { @apply p-10 md:p-4; }
+.responsive-p-6 { @apply p-12 md:p-4; }
+
+.responsive-py-2 { @apply py-4 md:py-2; }
+.responsive-py-3 { @apply py-6 md:py-2; }
+.responsive-py-4 { @apply py-8 md:py-3; }
+.responsive-py-5 { @apply py-10 md:py-4; }
+
+.responsive-px-2 { @apply px-4 md:px-2; }
+.responsive-px-3 { @apply px-6 md:px-2; }
+.responsive-px-4 { @apply px-8 md:px-3; }
+.responsive-px-5 { @apply px-10 md:px-4; }
+.responsive-px-6 { @apply px-12 md:px-4; }
+
+.responsive-mx-2 { @apply mx-4 md:mx-2; }
+.responsive-mx-4 { @apply mx-8 md:mx-4; }
+.responsive-mx-6 { @apply mx-12 md:mx-6; }
+
+.responsive-gap-2 { @apply gap-4 md:gap-2; }
+.responsive-gap-4 { @apply gap-8 md:gap-4; }
+
+.responsive-w-16 { @apply w-32 md:w-16; }
+.responsive-w-20 { @apply w-40 md:w-16; }
+.responsive-h-16 { @apply h-32 md:h-16; }
+.responsive-h-20 { @apply h-40 md:h-16; }
+
+.responsive-aspect-square { @apply aspect-square md:h-64 lg:h-48 xl:h-56; }
