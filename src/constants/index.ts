@@ -59,26 +59,36 @@ import.meta.env.VITE_API_BASE_URL ||
     ? 'http://127.0.0.1:8080'
     : 'https://alibee-affiliate-api.onrender.com');
 
-const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '';        // مثلا '/api'
+// const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '';        // مثلا '/api'
+// const HEALTH_PATH      = import.meta.env.VITE_API_HEALTH_PATH   || '/health';
+// const STATS_PATH       = import.meta.env.VITE_API_STATS_PATH    || '/stats';
+// const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/products';
+// // const SAVE_PATH        = import.meta.env.VITE_API_SAVE_PATH      || '/save';
+// // const UNSAVE_PATH      = import.meta.env.VITE_API_UNSAVE_PATH    || '/unsave';
+// // const DEMO_PATH        = import.meta.env.VITE_API_DEMO_PATH      || '/demo';
+
+
+const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '';
 const HEALTH_PATH      = import.meta.env.VITE_API_HEALTH_PATH   || '/health';
 const STATS_PATH       = import.meta.env.VITE_API_STATS_PATH    || '/stats';
-const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/products';
-// const SAVE_PATH        = import.meta.env.VITE_API_SAVE_PATH      || '/save';
-// const UNSAVE_PATH      = import.meta.env.VITE_API_UNSAVE_PATH    || '/unsave';
-// const DEMO_PATH        = import.meta.env.VITE_API_DEMO_PATH      || '/demo';
-
+const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/search'; // پیش‌فرض را /search گذاشتیم
+const SAVE_PATH        = import.meta.env.VITE_API_SAVE_PATH     || '/save';
+const UNSAVE_PATH      = import.meta.env.VITE_API_UNSAVE_PATH   || '/unsave';
+const DEMO_PATH        = import.meta.env.VITE_API_DEMO_PATH     || '/demo';
 const join = (b:string,p:string)=>`${b.replace(/\/+$/,'')}/${p.replace(/^\/+/,'')}`;
-const withPrefix = (p:string)=> API_PREFIX ? join(API_PREFIX, p) : p;
+const withPrefix = (p: string) => (API_PREFIX ? join(API_PREFIX, p) : p);
 
 export const API_ENDPOINTS = {
   BASE_URL,
-  HEALTH:   join(BASE_URL, withPrefix(HEALTH_PATH)),
-  STATS:    join(BASE_URL, withPrefix(STATS_PATH)),
-  PRODUCTS: join(BASE_URL, withPrefix(PRODUCTS_PATH)),
-  SAVE_PRODUCT:   join(BASE_URL, withPrefix('/save')),
-  UNSAVE_PRODUCT: join(BASE_URL, withPrefix('/unsave')),
-  // برای سازگاری
-  SEARCH: join(BASE_URL, withPrefix(PRODUCTS_PATH)),
+  HEALTH:        join(BASE_URL, withPrefix(HEALTH_PATH)),
+  STATS:         join(BASE_URL, withPrefix(STATS_PATH)),
+  PRODUCTS:      join(BASE_URL, withPrefix(PRODUCTS_PATH)),
+  SAVE_PRODUCT:  join(BASE_URL, withPrefix(SAVE_PATH)),
+  UNSAVE_PRODUCT:join(BASE_URL, withPrefix(UNSAVE_PATH)),
+  DEMO:          join(BASE_URL, withPrefix(DEMO_PATH)),
+
+  // برای سازگاری/خوانایی
+  SEARCH:        join(BASE_URL, withPrefix(PRODUCTS_PATH)),
 };
 export default API_ENDPOINTS;
 export const DEFAULT_PAGE_SIZE = 20;
