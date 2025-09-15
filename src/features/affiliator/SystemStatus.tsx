@@ -3,8 +3,10 @@ import API_ENDPOINTS from "../../constants"; // default
 import { API_ENDPOINTS as NAMED_ENDPOINTS } from "../../constants"; // named (اگر جای دیگر استفاده شده)
 
 type SystemStatus = {
-  db: "ok" | "error" | string;
-  ali_client: "ok" | "error" | string;
+  db?: "ok" | "error" | string;
+  ali_client?: "ok" | "error" | string;
+  database?: "connected" | "error" | string;
+  aliexpress_api?: "configured" | "not_configured" | string;
   message?: string;
   name?: string;
   version?: string;
@@ -60,12 +62,12 @@ function SystemStatus() {
     {
       icon: "🗄️",
       label: "Database",
-      ok: status.db === "ok",
+      ok: status.db === "ok" || status.database === "connected",
     },
     {
       icon: "🔌",
       label: "Ali Client",
-      ok: status.ali_client === "ok",
+      ok: status.ali_client === "ok" || status.aliexpress_api === "configured",
     },
   ];
 
