@@ -58,21 +58,30 @@ export const BASE_URL =
   (isLocal
     ? "http://127.0.0.1:8080"
     : "https://alibee-affiliate-api.onrender.com");
-// helper: اتصال path بدون // اضافه
-const join = (base: string, path: string) =>
-  `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+
+const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '';        // مثلا '/api'
+const HEALTH_PATH      = import.meta.env.VITE_API_HEALTH_PATH   || '/health';
+const STATS_PATH       = import.meta.env.VITE_API_STATS_PATH    || '/stats';
+const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/products';
+// const SAVE_PATH        = import.meta.env.VITE_API_SAVE_PATH      || '/save';
+// const UNSAVE_PATH      = import.meta.env.VITE_API_UNSAVE_PATH    || '/unsave';
+// const DEMO_PATH        = import.meta.env.VITE_API_DEMO_PATH      || '/demo';
+
+const join = (b: string, p: string) => `${b.replace(/\/+$/, '')}/${p.replace(/^\/+/, '')}`;
+const withPrefix = (p: string) => (API_PREFIX ? join(API_PREFIX, p) : p);
 
 export const API_ENDPOINTS = {
   BASE_URL,
-  HEALTH: join(BASE_URL, '/health'),
-  STATS: join(BASE_URL, '/stats'),
-  PRODUCTS: join(BASE_URL, '/products'),
-  SAVE_PRODUCT: join(BASE_URL, '/save'),
-  UNSAVE_PRODUCT: join(BASE_URL, '/unsave'),
-  DEMO: join(BASE_URL, '/demo'),
-  //SEARCH: join(BASE_URL, "/products"), // بعضی کدها از SEARCH استفاده می‌کنند
+  HEALTH:   join(BASE_URL, withPrefix(HEALTH_PATH)),
+  STATS:    join(BASE_URL, withPrefix(STATS_PATH)),
+  PRODUCTS: join(BASE_URL, withPrefix(PRODUCTS_PATH)),
+  SAVE_PRODUCT:   join(BASE_URL, withPrefix('/save')),
+  UNSAVE_PRODUCT: join(BASE_URL, withPrefix('/unsave')),
 
+  // برای سازگاری با کدهای قدیمی
+  SEARCH: join(BASE_URL, withPrefix(PRODUCTS_PATH)),
 };
+
 export default API_ENDPOINTS;
 export const DEFAULT_PAGE_SIZE = 20;
 export const INFINITE_SCROLL_THRESHOLD = 0.1;

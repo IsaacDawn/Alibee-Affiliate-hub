@@ -69,9 +69,9 @@ class ApiService {
   //   );
   // }
 
-  async getDemoProducts(): Promise<PaginatedResponse<Product>> {
-    return this.request<PaginatedResponse<Product>>(API_ENDPOINTS.DEMO);
-  }
+  // async getDemoProducts(): Promise<PaginatedResponse<Product>> {
+  //   return this.request<PaginatedResponse<Product>>(API_ENDPOINTS.DEMO);
+  // }
 
   async getSavedProducts(params: {
     q?: string;
