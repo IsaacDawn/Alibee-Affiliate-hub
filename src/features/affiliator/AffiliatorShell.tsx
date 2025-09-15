@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsDrawer } from "./SettingsDrawer";
 import { LazyProductCard } from "./LazyProductCard";
@@ -24,7 +24,6 @@ export function AffiliatorShell({ currency }: AffiliatorShellProps) {
     hasVideo: false,
     sort: "volume_desc",
   });
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
 
   // Use custom hooks for data management
@@ -33,27 +32,15 @@ export function AffiliatorShell({ currency }: AffiliatorShellProps) {
     loading,
     error: err,
     hasMore,
-    fetchProducts,
     loadMore,
     handleSave,
     savedProductsCount,
+    setQ,
   } = useProducts(filters);
 
   // Remove useStats hook since SystemStatus and StatsCard handle their own data
 
-  // Trigger fetch when filters or currency change
-  useEffect(() => {
-    // Skip auto-fetch on initial load
-    if (isInitialLoad) {
-      setIsInitialLoad(false);
-      return;
-    }
-    
-    // Only fetch if we have a search query
-    if (filters.q.trim()) {
-      fetchProducts(true);
-    }
-  }, [filters, currency, isInitialLoad]);
+  // Remove the manual fetch trigger since useProducts hook handles it automatically
 
   return (
     <div className="max-w-full md:max-w-7xl mx-auto relative">
@@ -72,6 +59,7 @@ export function AffiliatorShell({ currency }: AffiliatorShellProps) {
         <UnifiedSearchFilters
           onSearch={(query) => {
             setFilters(prev => ({ ...prev, q: query }));
+            setQ(query); // Update the useProducts hook's internal q state
           }}
           onFiltersChange={setFilters}
           filters={filters}
