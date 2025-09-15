@@ -48,26 +48,26 @@ class ApiService {
   }
 
   // Product operations
-  async searchProducts(params: {
-    q?: string;
-    categoryId?: string;
-    hasVideo?: boolean;
-    sort?: string;
-    page?: number;
-    pageSize?: number;
-  }): Promise<PaginatedResponse<Product>> {
-    const searchParams = new URLSearchParams();
+  // async searchProducts(params: {
+  //   q?: string;
+  //   categoryId?: string;
+  //   hasVideo?: boolean;
+  //   sort?: string;
+  //   page?: number;
+  //   pageSize?: number;
+  // }): Promise<PaginatedResponse<Product>> {
+  //   const searchParams = new URLSearchParams();
     
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.append(key, String(value));
-      }
-    });
+  //   Object.entries(params).forEach(([key, value]) => {
+  //     if (value !== undefined && value !== null && value !== '') {
+  //       searchParams.append(key, String(value));
+  //     }
+  //   });
 
-    return this.request<PaginatedResponse<Product>>(
-      `${API_ENDPOINTS.SEARCH}?${searchParams.toString()}`
-    );
-  }
+  //   return this.request<PaginatedResponse<Product>>(
+  //     `${API_ENDPOINTS.SEARCH}?${searchParams.toString()}`
+  //   );
+  // }
 
   async getDemoProducts(): Promise<PaginatedResponse<Product>> {
     return this.request<PaginatedResponse<Product>>(API_ENDPOINTS.DEMO);

@@ -66,11 +66,11 @@ export const API_ENDPOINTS = {
   BASE_URL,
   HEALTH: join(BASE_URL, '/health'),
   STATS: join(BASE_URL, '/stats'),
-  // PRODUCTS: join(BASE_URL, '/products'),
+  PRODUCTS: join(BASE_URL, '/products'),
   SAVE_PRODUCT: join(BASE_URL, '/save'),
   UNSAVE_PRODUCT: join(BASE_URL, '/unsave'),
   DEMO: join(BASE_URL, '/demo'),
-  SEARCH: join(BASE_URL, "/products"), // بعضی کدها از SEARCH استفاده می‌کنند
+  //SEARCH: join(BASE_URL, "/products"), // بعضی کدها از SEARCH استفاده می‌کنند
 
 };
 export default API_ENDPOINTS;
