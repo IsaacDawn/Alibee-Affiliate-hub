@@ -69,45 +69,18 @@ export function ProductCard({
         // ذخیره‌سازی
         const payload = {
           product_id: productId,
-          title: title ?? "",
-          selected_price: {
-            value: item.sale_price ? Number(item.sale_price) : 0,
-            currency: item.sale_price_currency || "USD",
-            original: item.original_price ? Number(item.original_price) : null,
-            original_currency: item.sale_price_currency || "USD",
-          },
-          video_url: item.product_video_url || null,
-          image_main: item.product_main_image_url || null,
+          product_title: title ?? "",
+          product_main_image_url: item.product_main_image_url || "",
+          product_video_url: item.product_video_url || null,
+          product_description: item.product_description || null,
           images_extra: item.images_extra || [],
-          lastest_volume: item.lastest_volume
-            ? Number(item.lastest_volume)
-            : null,
-          rating_weighted: item.rating_weighted
-            ? Number(item.rating_weighted)
-            : null,
-          category_id: item.first_level_category_id
-            ? String(item.first_level_category_id)
-            : null,
-          promotion_link: item.promotion_link || null,
-          product_url: item.product_url || null,
-          shop_url: item.shop_url || null,
-          shop_title: item.shop_title || null,
-          discount_percentage: item.discount_percentage
-            ? parseFloat(String(item.discount_percentage).replace("%", ""))
-            : null,
-          commission_rate: item.commission_rate
-            ? parseFloat(String(item.commission_rate).replace("%", ""))
-            : null,
-          commission_value: item.commission_value
-            ? Number(item.commission_value)
-            : null,
-          product_detail_url: item.product_detail_url || null,
-          product_sku: item.product_sku ? String(item.product_sku) : null,
-          product_brand: item.product_brand || null,
-          product_condition: item.product_condition || null,
-          product_warranty: item.product_warranty || null,
-          product_shipping_info: item.product_shipping_info || null,
-          product_return_policy: item.product_return_policy || null,
+          sale_price: item.sale_price ? Number(item.sale_price) : 0,
+          sale_price_currency: item.sale_price_currency || "USD",
+          original_price: item.original_price ? Number(item.original_price) : null,
+          original_price_currency: item.original_price_currency || item.sale_price_currency || "USD",
+          promotion_link: item.promotion_link || "",
+          rating_weighted: item.rating_weighted ? Number(item.rating_weighted) : null,
+          lastest_volume: item.lastest_volume ? Number(item.lastest_volume) : null,
         };
 
         const res = await fetch(API_ENDPOINTS.SAVE_PRODUCT, {
