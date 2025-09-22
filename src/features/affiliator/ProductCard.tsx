@@ -391,41 +391,42 @@ export function ProductCard({
 
 
   return (
-    <div className="h-screen relative flex items-start justify-center bg-gradient-to-br from-purple-600 to-pink-600 pt-32">
-      {/* Product Image Carousel */}
-      <ImageCarousel
-        images={[
-          ...extractImageUrls(item.images_link),
-          ...extractImageUrls(item.product_small_image_urls)
-        ]}
-        mainImage={item.product_main_image_url}
-        videoUrl={item.product_video_url}
-        className="w-[28rem] h-[28rem]"
-      />
+    <div className="h-screen relative bg-gradient-to-br from-purple-600 to-pink-600">
+      {/* Mobile Layout (unchanged) */}
+      <div className="md:hidden h-full relative flex items-start justify-center pt-32">
+        {/* Product Image Carousel */}
+        <ImageCarousel
+          images={[
+            ...extractImageUrls(item.images_link),
+            ...extractImageUrls(item.product_small_image_urls)
+          ]}
+          mainImage={item.product_main_image_url}
+          videoUrl={item.product_video_url}
+          className="w-[28rem] h-[28rem]"
+        />
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
 
-      {/* Right Side Actions */}
-      <div className="absolute right-8 top-1/2 transform translate-y-8 flex flex-col space-y-4 z-10">
-        {/* Like Button */}
-        <button
-          disabled={saving}
-          onClick={toggleSave}
-          className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
-            saved
-              ? "text-red-500"
-              : "text-white"
-          }`}
-          style={{ filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.8))' }}
-        >
-          <HeartIcon className="w-9 h-9" filled={saved} />
-        </button>
+        {/* Right Side Actions */}
+        <div className="absolute right-8 top-1/2 transform translate-y-8 flex flex-col space-y-4 z-10">
+          {/* Like Button */}
+          <button
+            disabled={saving}
+            onClick={toggleSave}
+            className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+              saved
+                ? "text-red-500"
+                : "text-white"
+            }`}
+            style={{ filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.8))' }}
+          >
+            <HeartIcon className="w-9 h-9" filled={saved} />
+          </button>
+        </div>
 
-      </div>
-
-      {/* Product Info Overlay */}
-      <div className="absolute bottom-20 left-8 right-32 z-20">
+        {/* Product Info Overlay */}
+        <div className="absolute bottom-20 left-8 right-32 z-20">
         <div className="space-y-2">
           {isEditingTitle ? (
             <div className="relative">
@@ -662,6 +663,190 @@ export function ProductCard({
             >
               Buy Now
             </button>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      {/* Desktop Layout (side by side) */}
+      <div className="hidden md:flex h-full">
+        {/* Left Side - Product Images */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <ImageCarousel
+            images={[
+              ...extractImageUrls(item.images_link),
+              ...extractImageUrls(item.product_small_image_urls)
+            ]}
+            mainImage={item.product_main_image_url}
+            videoUrl={item.product_video_url}
+            className="w-[32rem] h-[32rem] max-w-full max-h-full"
+          />
+        </div>
+
+        {/* Right Side - Product Information */}
+        <div className="flex-1 flex flex-col justify-center p-8 text-white">
+          <div className="max-w-lg space-y-6">
+            {/* Title Section */}
+            <div className="space-y-4">
+              {isEditingTitle ? (
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="w-full bg-transparent border-2 border-white border-dashed text-white text-3xl font-bold outline-none px-4 py-2 rounded"
+                    style={{ textShadow: '2px 2px 4px black' }}
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={handleTitleKeyDown}
+                    onBlur={handleTitleSave}
+                    autoFocus
+                    placeholder="Product title..."
+                  />
+                  <div className="flex space-x-2 mt-2">
+                    <button
+                      onClick={handleTitleSave}
+                      className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded transition-colors"
+                    >
+                      ✓ Save
+                    </button>
+                    <button
+                      onClick={handleTitleCancel}
+                      className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs rounded transition-colors"
+                    >
+                      ✗ Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <h1 
+                  className="text-white text-3xl font-bold cursor-pointer hover:bg-white/10 px-4 py-2 rounded transition-colors" 
+                  style={{ textShadow: '2px 2px 4px black' }}
+                  onClick={handleTitleClick}
+                  title="Click to edit title"
+                >
+                  {title}
+                </h1>
+              )}
+            </div>
+
+            {/* Price Section */}
+            <div className="flex items-center space-x-4">
+              <p className="text-2xl font-semibold text-green-400">
+                {formattedPrice}
+              </p>
+              {formattedOriginalPrice && (
+                <span className="text-lg text-gray-300 line-through">
+                  {formattedOriginalPrice}
+                </span>
+              )}
+            </div>
+
+            {/* Rating Section */}
+            <div className="flex items-center" style={{ color: '#a3e4d7' }}>
+              {(() => {
+                const finalRating = getFinalRating(item);
+                const hasValidRating = finalRating !== null && finalRating > 0;
+                
+                if (hasValidRating) {
+                  return (
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center">
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const isFullStar = star <= finalRating;
+                          const isHalfStar = star > finalRating && star - finalRating < 1;
+                          
+                          return (
+                            <div key={star} className="relative">
+                              <StarIcon 
+                                className="w-5 h-5" 
+                                filled={isFullStar} 
+                                halfFilled={isHalfStar}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <span className="text-sm text-gray-300 font-medium">
+                        {formatRatingDisplay(finalRating)}
+                      </span>
+                      <span className="text-sm text-gray-400">
+                        ({item.lastest_volume ? formatSalesVolume(Number(item.lastest_volume)) : '0'} reviews)
+                      </span>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="flex items-center space-x-2">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <div key={star} className="relative">
+                            <StarIcon 
+                              className="w-5 h-5 opacity-30" 
+                              filled={false} 
+                              halfFilled={false}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <span className="text-sm text-gray-400">
+                        No Rating Available
+                      </span>
+                    </div>
+                  );
+                }
+              })()}
+            </div>
+
+            {/* Description */}
+            <p className="text-gray-300 text-lg leading-relaxed">
+              {item.product_description || "Premium quality product with excellent features."}
+            </p>
+
+            {/* Product Details Grid */}
+            <div className="grid grid-cols-2 gap-4 text-sm text-gray-300">
+              <div className="flex items-center space-x-2">
+                <span className="text-cyan-400">🆔</span>
+                <span>ID: {item.product_id}</span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-orange-400">💱</span>
+                <span>Original: {item.original_currency || item.sale_price_currency || 'CNY'}</span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-green-400">📦</span>
+                <span>{item.lastest_volume ? formatSalesVolume(Number(item.lastest_volume)) : "0"} bought</span>
+              </div>
+              
+              {item.commission_rate && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-yellow-400">💰</span>
+                  <span>{item.commission_rate}% commission</span>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-4 pt-4">
+              <button
+                disabled={saving}
+                onClick={toggleSave}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  saved
+                    ? "text-red-500 bg-white/20"
+                    : "text-white bg-white/10 hover:bg-white/20"
+                }`}
+              >
+                <HeartIcon className="w-8 h-8" filled={saved} />
+              </button>
+              
+              <button 
+                className="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105"
+                onClick={() => window.open(item.promotion_link || '#', '_blank')}
+              >
+                Buy Now
+              </button>
+            </div>
           </div>
         </div>
       </div>
