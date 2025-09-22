@@ -3,35 +3,6 @@ export const CURRENCIES = {
   USD: { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸' },
   EUR: { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺' },
   ILS: { code: 'ILS', symbol: '₪', name: 'Israeli Shekel', flag: '🇮🇱' },
-  GBP: { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧' },
-  JPY: { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: '🇯🇵' },
-  CAD: { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', flag: '🇨🇦' },
-  AUD: { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', flag: '🇦🇺' },
-  CHF: { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc', flag: '🇨🇭' },
-  CNY: { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', flag: '🇨🇳' },
-  INR: { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: '🇮🇳' },
-  KRW: { code: 'KRW', symbol: '₩', name: 'South Korean Won', flag: '🇰🇷' },
-  BRL: { code: 'BRL', symbol: 'R$', name: 'Brazilian Real', flag: '🇧🇷' },
-  MXN: { code: 'MXN', symbol: '$', name: 'Mexican Peso', flag: '🇲🇽' },
-  RUB: { code: 'RUB', symbol: '₽', name: 'Russian Ruble', flag: '🇷🇺' },
-  TRY: { code: 'TRY', symbol: '₺', name: 'Turkish Lira', flag: '🇹🇷' },
-  ZAR: { code: 'ZAR', symbol: 'R', name: 'South African Rand', flag: '🇿🇦' },
-  SEK: { code: 'SEK', symbol: 'kr', name: 'Swedish Krona', flag: '🇸🇪' },
-  NOK: { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone', flag: '🇳🇴' },
-  DKK: { code: 'DKK', symbol: 'kr', name: 'Danish Krone', flag: '🇩🇰' },
-  PLN: { code: 'PLN', symbol: 'zł', name: 'Polish Zloty', flag: '🇵🇱' },
-  CZK: { code: 'CZK', symbol: 'Kč', name: 'Czech Koruna', flag: '🇨🇿' },
-  HUF: { code: 'HUF', symbol: 'Ft', name: 'Hungarian Forint', flag: '🇭🇺' },
-  AED: { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', flag: '🇦🇪' },
-  SAR: { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal', flag: '🇸🇦' },
-  EGP: { code: 'EGP', symbol: '£', name: 'Egyptian Pound', flag: '🇪🇬' },
-  THB: { code: 'THB', symbol: '฿', name: 'Thai Baht', flag: '🇹🇭' },
-  VND: { code: 'VND', symbol: '₫', name: 'Vietnamese Dong', flag: '🇻🇳' },
-  IDR: { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah', flag: '🇮🇩' },
-  MYR: { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit', flag: '🇲🇾' },
-  SGD: { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar', flag: '🇸🇬' },
-  PHP: { code: 'PHP', symbol: '₱', name: 'Philippine Peso', flag: '🇵🇭' },
-  NZD: { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar', flag: '🇳🇿' },
 } as const;
 
 
@@ -59,7 +30,7 @@ import.meta.env.VITE_API_BASE_URL ||
     ? 'http://127.0.0.1:8080'
     : 'https://alibee-affiliate-api.onrender.com');
 
-// const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '';        // مثلا '/api'
+// const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '';        // e.g. '/api'
 // const HEALTH_PATH      = import.meta.env.VITE_API_HEALTH_PATH   || '/health';
 // const STATS_PATH       = import.meta.env.VITE_API_STATS_PATH    || '/stats';
 // const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/products';
@@ -71,7 +42,7 @@ import.meta.env.VITE_API_BASE_URL ||
 const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '';
 const HEALTH_PATH      = import.meta.env.VITE_API_HEALTH_PATH   || '/health';
 const STATS_PATH       = import.meta.env.VITE_API_STATS_PATH    || '/stats';
-const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/search'; // پیش‌فرض را /search گذاشتیم
+const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/search'; // Default set to /search
 const SAVE_PATH        = import.meta.env.VITE_API_SAVE_PATH     || '/save';
 const UNSAVE_PATH      = import.meta.env.VITE_API_UNSAVE_PATH   || '/unsave';
 const DEMO_PATH        = import.meta.env.VITE_API_DEMO_PATH     || '/demo';
@@ -84,10 +55,15 @@ export const API_ENDPOINTS = {
   STATS:         join(BASE_URL, withPrefix(STATS_PATH)),
   PRODUCTS:      join(BASE_URL, withPrefix(PRODUCTS_PATH)),
   SAVE_PRODUCT:  join(BASE_URL, withPrefix(SAVE_PATH)),
+  UPDATE_PRODUCT: join(BASE_URL, withPrefix(SAVE_PATH)),
+  CHECK_PRODUCT_EXISTS: join(BASE_URL, withPrefix('/check')),
+  GET_PRODUCT_INFO: join(BASE_URL, withPrefix('/info')),
   UNSAVE_PRODUCT:join(BASE_URL, withPrefix(UNSAVE_PATH)),
   DEMO:          join(BASE_URL, withPrefix(DEMO_PATH)),
+  DAILY_PRODUCTS: join(BASE_URL, withPrefix('/daily-products')),
+  UPDATE_DESCRIPTION: join(BASE_URL, withPrefix('/update-description')),
 
-  // برای سازگاری/خوانایی
+  // For compatibility/readability
   SEARCH:        join(BASE_URL, withPrefix(PRODUCTS_PATH)),
 };
 export default API_ENDPOINTS;

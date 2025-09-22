@@ -1,137 +1,244 @@
+import { useState, useEffect } from "react";
+import { useCategories } from "../../hooks/useCategories";
+// import { PriceRangeFilter } from "./PriceRangeFilter";
+import { getPopularSearchTerms, enhanceSearchQuery } from "../../utils/searchEnhancer";
+
 type Props = {
     open: boolean;
     onClose: () => void;
     value: {
       q: string;
       categoryId: string;
-      hasVideo: boolean;
       sort: "volume_desc" | "discount_desc" | "rating_desc";
+      minPrice?: number;
+      maxPrice?: number;
     };
     onChange: (v: Props["value"]) => void;
+    currency: any;
   };
-
-  const CATEGORIES = [
-    { id: "", name: "All Categories" },
-    { id: "100001", name: "Electronics" },
-    { id: "100002", name: "Watches & Jewelry" },
-    { id: "100003", name: "Phone Accessories" },
-    { id: "100004", name: "Home & Garden" },
-    { id: "100005", name: "Beauty & Health" },
-    { id: "100006", name: "Sports & Outdoors" },
-    { id: "100007", name: "Automotive" },
-    { id: "100008", name: "Toys & Games" },
-    { id: "100009", name: "Fashion" },
-    { id: "100010", name: "Tools & Hardware" },
-  ];
   
-  export function SettingsDrawer({ open, onClose, value, onChange }: Props) {
+  export function SettingsDrawer({ open, onClose, value, onChange, currency: _currency }: Props) {
+    const { categories } = useCategories();
+    const [searchQuery, setSearchQuery] = useState(value.q);
+    const [searchHistory, setSearchHistory] = useState<string[]>([]);
+    
+    // Load search history from localStorage
+    useEffect(() => {
+      const saved = localStorage.getItem('searchHistory');
+      if (saved) {
+        try {
+          setSearchHistory(JSON.parse(saved));
+        } catch (e) {
+          setSearchHistory([]);
+        }
+      }
+    }, []);
+    
+    const handleSearch = () => {
+      if (searchQuery.trim()) {
+        const trimmedQuery = searchQuery.trim();
+        console.log(`🔍 Searching for: "${trimmedQuery}" - clearing existing products`);
+        onChange({ ...value, q: trimmedQuery });
+        
+        // Add to search history
+        const newHistory = [trimmedQuery, ...searchHistory.filter(h => h !== trimmedQuery)].slice(0, 10);
+        setSearchHistory(newHistory);
+        localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+        
+        onClose(); // Close the drawer after search
+      }
+    };
+
+    const handleQuickSearch = (searchTerm: string) => {
+      console.log(`🔍 Quick search for: "${searchTerm}" - clearing existing products`);
+      setSearchQuery(searchTerm);
+      onChange({ ...value, q: searchTerm });
+      
+      // Add to search history
+      const newHistory = [searchTerm, ...searchHistory.filter(h => h !== searchTerm)].slice(0, 10);
+      setSearchHistory(newHistory);
+      localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+      
+      onClose(); // Close drawer after selection
+    };
+    
     if (!open) return null;
   
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" onClick={onClose}>
-      <div
-        className="absolute left-0 top-0 h-full w-full sm:w-96 md:w-[400px] lg:w-[450px] bg-white/30 backdrop-blur-xl border-r border-white/40 p-6 space-y-6 shadow-2xl overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Filters"
-      >
-        <div className="flex items-center justify-between border-b border-white/20 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <span className="text-white text-lg">🔍</span>
-            </div>
-            <h3 className="font-bold text-2xl md:text-xl text-slate-900">Filters</h3>
-          </div>
-          <button 
-            onClick={onClose} 
-            aria-label="Close"
-            className="p-3 md:p-2 hover:bg-white/20 rounded-xl text-slate-900 transition-all duration-300 hover:scale-110"
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
-  
-        <div className="space-y-6">
-          <div>
-            <label className="block text-base md:text-sm font-medium text-slate-700 mb-3">
-              🔍 Search Keywords
-            </label>
-            <input
-              placeholder="Product name, brand or keywords..."
-              className="w-full bg-white/30 backdrop-blur-sm border border-white/40 text-slate-900 p-5 md:p-4 rounded-2xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 placeholder-slate-500 transition-all duration-300 text-lg md:text-base"
-              value={value.q}
-              onChange={(e) => onChange({ ...value, q: e.target.value })}
-            />
-          </div>
+    <div className="fixed inset-0 bg-black bg-opacity-90 z-40 flex items-center justify-center overflow-y-auto" onClick={onClose}>
+      <div className="w-full max-w-lg p-6 space-y-6 text-white" onClick={(e) => e.stopPropagation()}>
+        {/* Close Button */}
+        <button className="absolute top-4 right-4 text-white" onClick={onClose}>
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
 
-          <div>
-            <label className="block text-base md:text-sm font-medium text-slate-700 mb-3">
-              📂 Category
-            </label>
-            <select
-              className="w-full bg-white/30 backdrop-blur-sm border border-white/40 text-slate-900 p-5 md:p-4 rounded-2xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 transition-all duration-300 text-lg md:text-base"
-              value={value.categoryId}
-              onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
-            >
-              {CATEGORIES.map(cat => (
-                <option key={cat.id} value={cat.id} className="bg-gray-800">{cat.name}</option>
-              ))}
-            </select>
-          </div>
-  
-          <div>
-            <label className="block text-base md:text-sm font-medium text-slate-700 mb-3">
-              📊 Sort By
-            </label>
-            <select
-              className="w-full bg-white/30 backdrop-blur-sm border border-white/40 text-slate-900 p-5 md:p-4 rounded-2xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 transition-all duration-300 text-lg md:text-base"
-              value={value.sort}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  sort: e.target.value as Props["value"]["sort"],
-                })
+        {/* Search Input */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">Search Products</label>
+          <input 
+            type="text" 
+            placeholder="Type product name (e.g., hat, phone, laptop) or product ID (e.g., 1005001234567890)..." 
+            className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch();
               }
-            >
-              <option value="volume_desc" className="bg-gray-800">📈 Best Selling</option>
-              <option value="discount_desc" className="bg-gray-800">💰 Best Discount</option>
-              <option value="rating_desc" className="bg-gray-800">⭐ Highest Rating</option>
-            </select>
-          </div>
-  
-          <div className="flex items-center gap-4 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl">
-            <input
-              type="checkbox"
-              id="hasVideo"
-              checked={value.hasVideo}
-              onChange={(e) => onChange({ ...value, hasVideo: e.target.checked })}
-              className="w-6 h-6 md:w-5 md:h-5 text-purple-600 focus:ring-purple-500 border-white/20 rounded bg-white/10"
-            />
-            <label htmlFor="hasVideo" className="text-base md:text-sm font-medium text-slate-900 flex items-center gap-2">
-              <span className="text-lg">🎥</span>
-              Only products with video
-            </label>
+            }}
+          />
+          
+          {/* Search Enhancement Preview */}
+          {searchQuery.trim() && enhanceSearchQuery(searchQuery) !== searchQuery.trim() && !searchQuery.trim().match(/^\d{10,}$/) && (
+            <div className="text-xs text-gray-400 bg-gray-900 p-2 rounded">
+              <span className="text-gray-500">Enhanced search:</span> {enhanceSearchQuery(searchQuery)}
+            </div>
+          )}
+          
+          {/* Product ID Search Indicator */}
+          {searchQuery.trim().match(/^\d{10,}$/) && (
+            <div className="text-xs text-blue-400 bg-blue-900/20 p-2 rounded border border-blue-500/30">
+              <span className="text-blue-300">🔍 Product ID search detected:</span> {searchQuery.trim()}
+            </div>
+          )}
+          
+          <button 
+            onClick={handleSearch}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300"
+          >
+            🔍 Search Products
+          </button>
+        </div>
+
+        {/* Categories Dropdown */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">Category</label>
+          <select 
+            className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            value={value.categoryId}
+            onChange={(e) => {
+              const newCategoryId = e.target.value;
+              const categoryName = categories.find(cat => cat.id === newCategoryId)?.name || "";
+              
+              if (newCategoryId !== value.categoryId) {
+                if (categoryName && categoryName !== "All Categories") {
+                  setSearchQuery(categoryName);
+                  onChange({ ...value, categoryId: newCategoryId, q: categoryName });
+                } else {
+                  setSearchQuery("");
+                  onChange({ ...value, categoryId: newCategoryId, q: "" });
+                }
+              } else {
+                onChange({ ...value, categoryId: newCategoryId });
+              }
+            }}
+          >
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Popular Categories */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-bold">Popular Categories</h3>
+          <div className="flex flex-wrap gap-2">
+            {categories.slice(1, 5).map(cat => (
+              <button 
+                key={cat.id}
+                className="bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-600 transition-all duration-300"
+                onClick={() => {
+                  console.log(`🔍 Category search for: "${cat.name}"`);
+                  setSearchQuery(cat.name);
+                  onChange({ ...value, categoryId: cat.id, q: cat.name });
+                  
+                  // Add to search history
+                  const newHistory = [cat.name, ...searchHistory.filter(h => h !== cat.name)].slice(0, 10);
+                  setSearchHistory(newHistory);
+                  localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+                  
+                  onClose(); // Close drawer after selection
+                }}
+              >
+                {cat.name}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="border-t border-white/20 pt-6">
-          <button
-            onClick={() => onChange({
-              q: "",
-              categoryId: "",
-              hasVideo: false,
-              sort: "volume_desc"
-            })}
-            className="w-full px-6 py-5 md:py-4 text-slate-900 border border-white/40 rounded-2xl hover:bg-white/20 transition-all duration-300 font-medium backdrop-blur-sm text-lg md:text-base"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <span>🔄</span>
-              <span>Clear All Filters</span>
-            </span>
-          </button>
+
+        {/* Hot Products Button */}
+        <button 
+          className="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full font-bold transition-all duration-300"
+          onClick={() => {
+            console.log(`🔍 Hot products search`);
+            setSearchQuery("hot products");
+            onChange({ ...value, categoryId: "", q: "hot products" });
+            
+            // Add to search history
+            const newHistory = ["hot products", ...searchHistory.filter(h => h !== "hot products")].slice(0, 10);
+            setSearchHistory(newHistory);
+            localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+            
+            onClose(); // Close drawer after selection
+          }}
+        >
+          🔥 Hot Products
+        </button>
+
+        {/* Search History */}
+        {searchHistory.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold">Recent Searches</h3>
+            <div className="flex flex-wrap gap-2">
+              {searchHistory.slice(0, 5).map((term, index) => (
+                <button 
+                  key={index}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-full text-sm transition-all duration-300"
+                  onClick={() => handleQuickSearch(term)}
+                >
+                  {term}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Quick Search Suggestions */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-bold">Quick Search</h3>
+          <div className="flex flex-wrap gap-2">
+            {getPopularSearchTerms().slice(0, 6).map((term) => (
+              <button 
+                key={term}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-sm transition-all duration-300"
+                onClick={() => handleQuickSearch(term)}
+              >
+                {term}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Product ID Search Examples */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-bold">Search by Product ID</h3>
+          <div className="flex flex-wrap gap-2">
+            {["1005001234567890", "1005001234567892", "1005001234567895"].map((productId) => (
+              <button 
+                key={productId}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full text-sm transition-all duration-300 font-mono"
+                onClick={() => handleQuickSearch(productId)}
+              >
+                {productId}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400">
+            Click any product ID above to search for that specific product
+          </p>
         </div>
       </div>
     </div>

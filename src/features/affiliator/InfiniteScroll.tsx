@@ -5,13 +5,15 @@ interface InfiniteScrollProps {
   loading: boolean;
   onLoadMore: () => void;
   children: React.ReactNode;
+  itemCount: number; // Total number of items currently loaded
 }
 
 export function InfiniteScroll({ 
   hasMore, 
   loading, 
   onLoadMore, 
-  children 
+  children,
+  itemCount
 }: InfiniteScrollProps) {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -29,7 +31,7 @@ export function InfiniteScroll({
 
     observerRef.current = new IntersectionObserver(handleObserver, {
       threshold: 0.1,
-      rootMargin: "200px", // Start loading 200px before reaching the bottom for better UX
+      rootMargin: "1000px", // Start loading when the trigger is 1000px away (approximately 1 screen height)
     });
 
     observerRef.current.observe(element);
@@ -41,16 +43,29 @@ export function InfiniteScroll({
     };
   }, [handleObserver]);
 
+  // Position the trigger element based on item count
+  // Show trigger when we have at least 2 items, and position it to trigger when 1 item remains
+  const shouldShowTrigger = itemCount >= 2 && hasMore;
+  const triggerPosition = shouldShowTrigger ? Math.max(0, itemCount - 2) : itemCount;
+
   return (
     <div>
       {children}
       
-      {/* Invisible trigger element for infinite scroll */}
-      <div 
-        ref={loadMoreRef}
-        className="h-4 w-full"
-        aria-hidden="true"
-      />
+      {/* Invisible trigger element positioned to trigger when 1 card remains */}
+      {shouldShowTrigger && (
+        <div 
+          ref={loadMoreRef}
+          className="h-4 w-full"
+          aria-hidden="true"
+          style={{ 
+            position: 'absolute',
+            top: `${triggerPosition * 100}vh`,
+            left: 0,
+            right: 0
+          }}
+        />
+      )}
     </div>
   );
 }

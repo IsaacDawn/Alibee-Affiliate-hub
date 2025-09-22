@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import API_ENDPOINTS from "../../constants"; // default
-import { API_ENDPOINTS as NAMED_ENDPOINTS } from "../../constants"; // named (اگر جای دیگر استفاده شده)
+import { API_ENDPOINTS as NAMED_ENDPOINTS } from "../../constants"; // named (if used elsewhere)
 
 type SystemStatus = {
   db?: "ok" | "error" | string;
@@ -61,12 +61,12 @@ function SystemStatus() {
   const items = [
     {
       icon: "🗄️",
-      label: "Database",
+      label: "Database connectivity",
       ok: status.db === "ok" || status.database === "connected",
     },
     {
       icon: "🔌",
-      label: "Ali Client",
+      label: "AliExpress API connectivity",
       ok: status.ali_client === "ok" || status.aliexpress_api === "configured",
     },
   ];
@@ -104,6 +104,6 @@ function SystemStatus() {
   );
 }
 
-// هم named هم default بدیم تا importهای مختلف نشکنه
+// Both named and default exports to avoid breaking different imports
 export { SystemStatus };
 export default SystemStatus;

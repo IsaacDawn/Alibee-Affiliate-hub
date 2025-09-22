@@ -1,6 +1,7 @@
 // src/hooks/useProducts.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_ENDPOINTS } from "../constants";
+import { enhanceSearchQuery } from "../utils/searchEnhancer";
 
 type Product = any;
 
@@ -18,19 +19,19 @@ type StatsResp = {
   error?: unknown;
 };
 
-// ✅ امضای سازگار: می‌پذیرد useProducts(filters) یا useProducts(q, pageSize)
+// ✅ Compatible signature: accepts useProducts(filters) or useProducts(q, pageSize)
 function useProducts(arg1?: any, arg2?: any) {
-  // استخراج q و pageSize از ورودی‌های مختلف
+  // Extract q and pageSize from different inputs
   let initialQ = "";
-  let initialPageSize = 10; // کاهش pageSize برای lazy loading بهتر
+  let initialPageSize = 5; // 5 products per lazy load for better performance
 
   if (typeof arg1 === "string" || arg1 == null) {
     initialQ = (arg1 as string) || "";
-    initialPageSize = Number(arg2 ?? 10) || 10;
+    initialPageSize = Number(arg2 ?? 5) || 5;
   } else {
     const f = arg1 || {};
     initialQ = f.q ?? f.query ?? "";
-    initialPageSize = Number(f.pageSize ?? f.limit ?? 10) || 10;
+    initialPageSize = Number(f.pageSize ?? f.limit ?? 5) || 5;
   }
 
   const [q, setQ] = useState<string>(initialQ);
@@ -44,7 +45,7 @@ function useProducts(arg1?: any, arg2?: any) {
   const [error, setError] = useState<string | null>(null);
   const [savedProductsCount, setSavedProductsCount] = useState<number>(0);
 
-  // آمار اولیه (اختیاری)
+  // Initial stats (optional)
   useEffect(() => {
     (async () => {
       try {
@@ -60,34 +61,70 @@ function useProducts(arg1?: any, arg2?: any) {
     })();
   }, []);
 
-  // هسته‌ی fetch محصولات
+  // Core product fetching
   const _fetchProducts = useCallback(
     async (nextPage: number, replace: boolean) => {
       setLoading(true);
       setError(null);
       try {
+        // Use search endpoint for all requests
+        const endpoint = API_ENDPOINTS.SEARCH;
         const params = new URLSearchParams({
-          ...(q ? { q } : {}),
           page: String(nextPage || 1),
-          pageSize: String(pageSize || 10),
+          pageSize: String(pageSize || 5),
         });
+        
+        // Add search query if provided, otherwise use diverse keywords for homepage
+        if (q) {
+          // Enhance search query with synonyms and related terms
+          const enhancedQuery = enhanceSearchQuery(q);
+          params.append("q", enhancedQuery);
+        } else if (!filters || !filters.categoryId || filters.categoryId === "") {
+          // Homepage - use diverse keywords (excluding automotive to avoid car-only results)
+          const diverseKeywords = [
+            'phone smartphone mobile',
+            'laptop computer notebook', 
+            'fashion clothing dress',
+            'shoes sneakers boots',
+            'home garden furniture',
+            'beauty cosmetics skincare',
+            'sports fitness gym',
+            'toys games children',
+            'jewelry watch accessories',
+            'camera photography',
+            'tablet ipad android',
+            'kitchen cooking utensils',
+            'electronics gadgets tech',
+            'health wellness supplements',
+            'books stationery office'
+          ];
+          const randomKeyword = diverseKeywords[Math.floor(Math.random() * diverseKeywords.length)];
+          params.append("q", randomKeyword);
+        }
         
         // Add additional filters if they exist
         if (filters) {
-          if (filters.hasVideo) params.append("hasVideo", "true");
           if (filters.categoryId) params.append("categoryId", filters.categoryId);
           if (filters.sort) params.append("sort", filters.sort);
+          if (filters.minPrice !== undefined && filters.minPrice !== null) {
+            params.append("minPrice", String(filters.minPrice));
+          }
+          if (filters.maxPrice !== undefined && filters.maxPrice !== null) {
+            params.append("maxPrice", String(filters.maxPrice));
+          }
         }
-        const res = await fetch(`${API_ENDPOINTS.SEARCH}?${params.toString()}`);
+        
+        const res = await fetch(`${endpoint}?${params.toString()}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data: ProductsResp = await res.json();
         const newItems = Array.isArray(data.items) ? data.items : [];
+        
         setHasMore(Boolean(data.hasMore));
         setItems((prev) => {
           if (replace) {
             return newItems;
           } else {
-            // حذف محصولات تکراری بر اساس product_id
+            // Remove duplicate products based on product_id
             const existingIds = new Set(prev.map(item => item.product_id));
             const uniqueNewItems = newItems.filter(item => !existingIds.has(item.product_id));
             return [...prev, ...uniqueNewItems];
@@ -102,10 +139,10 @@ function useProducts(arg1?: any, arg2?: any) {
     [q, pageSize, filters]
   );
 
-  // ✅ overload سازگار:
-  // - fetchProducts()                → صفحه 1، replace=true
-  // - fetchProducts(true)            → replace=true روی صفحه‌ی فعلی
-  // - fetchProducts(2)               → صفحه 2، replace=true
+  // ✅ Compatible overload:
+  // - fetchProducts()                → page 1, replace=true
+  // - fetchProducts(true)            → replace=true on current page
+  // - fetchProducts(2)               → page 2, replace=true
   function fetchProducts(): Promise<void>;
   function fetchProducts(replace: boolean): Promise<void>;
   function fetchProducts(page: number): Promise<void>;
@@ -119,14 +156,23 @@ function useProducts(arg1?: any, arg2?: any) {
     return _fetchProducts(1, true);
   }
 
-  // ✅ loadMore قبلی حفظ
+  // Function to immediately clear all products (useful for new searches)
+  const clearProducts = useCallback(() => {
+    console.log("🧹 Clearing all products for new search");
+    setItems([]);
+    setPage(1);
+    setHasMore(false);
+    setError(null);
+  }, []);
+
+  // ✅ Keep previous loadMore
   const loadMore = useCallback(async () => {
     const next = page + 1;
-    setPage(next);  // ابتدا page را به‌روزرسانی کن
+    setPage(next);  // First update the page
     await _fetchProducts(next, false);
   }, [page, _fetchProducts]);
 
-  // ✅ سازگار با دو شکل فراخوانی:
+  // ✅ Compatible with two call forms:
   // - handleSave(saved)
   // - handleSave(productId, saved)
   function handleSave(saved: boolean): void;
@@ -136,9 +182,12 @@ function useProducts(arg1?: any, arg2?: any) {
     setSavedProductsCount((c) => Math.max(0, c + (savedFlag ? 1 : -1)));
   }
 
-  // وقتی q، pageSize یا filters عوض شد، از صفحه 1 دوباره بیار
+  // When q, pageSize or filters change, fetch from page 1 again
   useEffect(() => {
+    // Immediately clear existing products when starting a new search
+    setItems([]);
     setPage(1);
+    setHasMore(false);
     _fetchProducts(1, true);
   }, [q, pageSize, filters, _fetchProducts]);
 
@@ -165,6 +214,7 @@ function useProducts(arg1?: any, arg2?: any) {
       fetchProducts, // (overloaded)
       loadMore,
       handleSave, // (overloaded)
+      clearProducts,
     }),
     [
       items,
@@ -180,6 +230,7 @@ function useProducts(arg1?: any, arg2?: any) {
       fetchProducts,
       loadMore,
       handleSave,
+      clearProducts,
     ]
   );
 }

@@ -6,7 +6,8 @@ import type {
   SystemStatus, 
   PaginatedResponse, 
   SaveProductRequest,
-  ApiResponse 
+  ApiResponse,
+  CategoriesResponse
 } from '../types';
 
 class ApiService {
@@ -124,6 +125,11 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ product_id: productId }),
     });
+  }
+
+  // Categories endpoint
+  async fetchCategories(): Promise<CategoriesResponse> {
+    return this.request<CategoriesResponse>('/categories');
   }
 }
 

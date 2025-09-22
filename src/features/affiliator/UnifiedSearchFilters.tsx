@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useCategories } from "../../hooks/useCategories";
 
 type Filters = {
   q: string;
@@ -15,19 +16,7 @@ interface UnifiedSearchFiltersProps {
   loading?: boolean;
 }
 
-const getCategories = (t: any) => [
-  { id: "", name: t('allCategories') },
-  { id: "100001", name: t('electronics') },
-  { id: "100002", name: t('watchesJewelry') },
-  { id: "100003", name: t('phoneAccessories') },
-  { id: "100004", name: t('homeGarden') },
-  { id: "100005", name: t('beautyHealth') },
-  { id: "100006", name: t('sportsOutdoors') },
-  { id: "100007", name: t('automotive') },
-  { id: "100008", name: t('toysGames') },
-  { id: "100009", name: t('fashion') },
-  { id: "100010", name: t('toolsHardware') },
-];
+// Removed static getCategories - now using dynamic categories from API
 
 const POPULAR_SEARCHES = [
   "phone", "laptop", "smart watch", "headphones", 
@@ -43,6 +32,7 @@ export function UnifiedSearchFilters({
 }: UnifiedSearchFiltersProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState(filters.q);
+  const { categories } = useCategories();
   // Removed showAdvanced state - filters are always visible now
 
   // Sync query state with filters.q
@@ -135,8 +125,10 @@ export function UnifiedSearchFilters({
                 onChange={(e) => onFiltersChange({ ...filters, categoryId: e.target.value })}
                 disabled={loading}
               >
-                {getCategories(t).map(cat => (
-                  <option key={cat.id} value={cat.id} className="bg-slate-800 text-white">{cat.name}</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id} className="bg-slate-800 text-white">
+                    {cat.name}
+                  </option>
                 ))}
               </select>
             </div>

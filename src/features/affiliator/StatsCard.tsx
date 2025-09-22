@@ -10,9 +10,10 @@ interface Stats {
 
 interface StatsCardProps {
   savedProductsCount?: number;
+  refreshTrigger?: number; // For triggering refresh
 }
 
-export function StatsCard({ savedProductsCount }: StatsCardProps) {
+export function StatsCard({ savedProductsCount, refreshTrigger }: StatsCardProps) {
   const [baseStats, setBaseStats] = useState<Omit<Stats, 'savedProducts'> | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +27,7 @@ export function StatsCard({ savedProductsCount }: StatsCardProps) {
         const data = await response.json();
         
         if (data.error) {
-          console.error("Stats API error:", data.error);
+          // Stats API error
           // Set default stats on error
           setBaseStats({
             totalProducts: 0,
@@ -38,7 +39,7 @@ export function StatsCard({ savedProductsCount }: StatsCardProps) {
         
         const newBaseStats = {
           totalProducts: 0, // This would come from AliExpress API stats
-          totalSearches: data.total_searches || 0,
+          totalSearches: data.totalSearches || data.total_searches || 0,
           affiliateLinks: data.affiliate_links || 0,
         };
         
@@ -57,6 +58,40 @@ export function StatsCard({ savedProductsCount }: StatsCardProps) {
     };
 
     fetchStats();
+  }, [refreshTrigger]); // Adding refreshTrigger to dependency array
+
+  // Auto-refresh stats every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const fetchStats = async () => {
+        try {
+          const response = await fetch(API_ENDPOINTS.STATS);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          
+          if (data.error) {
+            console.error("Stats API error:", data.error);
+            return;
+          }
+          
+          const newBaseStats = {
+            totalProducts: 0, // This would come from AliExpress API stats
+            totalSearches: data.totalSearches || data.total_searches || 0,
+            affiliateLinks: data.affiliate_links || 0,
+          };
+          
+          setBaseStats(newBaseStats);
+        } catch (error) {
+          console.error("Failed to fetch stats:", error);
+        }
+      };
+      
+      fetchStats();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   // Create final stats object with current savedProductsCount
