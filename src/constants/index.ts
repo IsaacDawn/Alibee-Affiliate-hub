@@ -60,22 +60,32 @@ const getBaseUrl = () => {
 
 const BASE_URL = getBaseUrl();
 
+// Helper function to get API path based on environment
+const getApiPath = (endpoint: string) => {
+  // In development, use /api prefix
+  if (import.meta.env.DEV) {
+    return `/api${endpoint}`;
+  }
+  
+  // In production (Render.com), use direct paths without /api prefix
+  return endpoint;
+};
+
 export const API_ENDPOINTS = {
   BASE_URL,
-  HEALTH: `${BASE_URL}/api/health`,
-  STATS: `${BASE_URL}/api/stats`,
-  PRODUCTS: `${BASE_URL}/api/products`,
-  CATEGORIES: `${BASE_URL}/api/categories`,
-  EXCHANGE: `${BASE_URL}/api/exchange`,
-  SAVE_PRODUCT: `${BASE_URL}/api/save`,
-  UPDATE_PRODUCT: `${BASE_URL}/api/save`,
-  CHECK_PRODUCT_EXISTS: `${BASE_URL}/api/check`,
-  GET_PRODUCT_INFO: `${BASE_URL}/api/info`,
-  UNSAVE_PRODUCT: `${BASE_URL}/api/unsave`,
-  DEMO: `${BASE_URL}/api/demo`,
-  DAILY_PRODUCTS: `${BASE_URL}/api/daily-products`,
-  UPDATE_DESCRIPTION: `${BASE_URL}/api/update-description`,
-  SEARCH: `${BASE_URL}/api/search`,
+  HEALTH: `${BASE_URL}${getApiPath('/health')}`,
+  STATS: `${BASE_URL}${getApiPath('/stats')}`,
+  PRODUCTS: `${BASE_URL}${getApiPath('/products')}`,
+  EXCHANGE: `${BASE_URL}${getApiPath('/exchange')}`,
+  SAVE_PRODUCT: `${BASE_URL}${getApiPath('/save')}`,
+  UPDATE_PRODUCT: `${BASE_URL}${getApiPath('/save')}`,
+  CHECK_PRODUCT_EXISTS: `${BASE_URL}${getApiPath('/check')}`,
+  GET_PRODUCT_INFO: `${BASE_URL}${getApiPath('/info')}`,
+  UNSAVE_PRODUCT: `${BASE_URL}${getApiPath('/unsave')}`,
+  DEMO: `${BASE_URL}${getApiPath('/demo')}`,
+  DAILY_PRODUCTS: `${BASE_URL}${getApiPath('/daily-products')}`,
+  UPDATE_DESCRIPTION: `${BASE_URL}${getApiPath('/update-description')}`,
+  SEARCH: `${BASE_URL}${getApiPath('/search')}`,
 };
 export default API_ENDPOINTS;
 export const DEFAULT_PAGE_SIZE = 20;

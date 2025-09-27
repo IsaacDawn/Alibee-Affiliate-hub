@@ -4,7 +4,6 @@ import type { Currency } from "../../types";
 import { ImageCarousel } from "./ImageCarousel";
 import { API_ENDPOINTS } from "../../constants";
 import { HeartIcon, StarIcon } from "../../icons";
-import { getCategoryName, getCategoryEmoji } from "../../utils/categoryMapping";
 import { debugRatingData, getFinalRating, formatRatingDisplay } from "../../utils/ratingDebug";
 
 // Helper function to format sales volume
@@ -464,18 +463,13 @@ export function MobilePortraitProductCard({
             {(item.product_category || item.first_level_category_name || item.second_level_category_name || item.first_level_category_id) && (
               <div className="flex items-center space-x-1">
                 <span className="text-blue-400">
-                  {getCategoryEmoji(
-                    item.product_category || 
-                    item.first_level_category_name || 
-                    item.second_level_category_name || 
-                    getCategoryName(item.first_level_category_id)
-                  )}
+                  📦
                 </span>
                 <span>
                   {item.product_category || 
                    item.first_level_category_name || 
                    item.second_level_category_name || 
-                   getCategoryName(item.first_level_category_id)}
+                   'Category'}
                 </span>
               </div>
             )}

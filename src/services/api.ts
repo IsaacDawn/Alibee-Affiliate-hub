@@ -7,7 +7,6 @@ import type {
   PaginatedResponse, 
   SaveProductRequest,
   ApiResponse,
-  CategoriesResponse
 } from '../types';
 
 class ApiService {
@@ -124,10 +123,6 @@ class ApiService {
     });
   }
 
-  // Categories endpoint
-  async fetchCategories(): Promise<CategoriesResponse> {
-    return this.request<CategoriesResponse>(API_ENDPOINTS.CATEGORIES);
-  }
 }
 
 // Export singleton instance

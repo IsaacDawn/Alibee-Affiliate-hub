@@ -27,8 +27,6 @@ i18n.use(initReactI18next).init({
       searching: 'Searching...',
       searchProducts: 'Search for products, brands, or keywords...',
       
-      // Categories
-      allCategories: 'All Categories',
       electronics: 'Electronics',
       watchesJewelry: 'Watches & Jewelry',
       phoneAccessories: 'Phone Accessories',
@@ -91,8 +89,6 @@ i18n.use(initReactI18next).init({
       searching: 'מחפש...',
       searchProducts: 'חפש מוצרים, מותגים או מילות מפתח...',
       
-      // Categories
-      allCategories: 'כל הקטגוריות',
       electronics: 'אלקטרוניקה',
       watchesJewelry: 'שעונים ותכשיטים',
       phoneAccessories: 'אביזרי טלפון',
@@ -155,8 +151,6 @@ i18n.use(initReactI18next).init({
       searching: 'جاري البحث...',
       searchProducts: 'ابحث عن المنتجات أو العلامات التجارية أو الكلمات المفتاحية...',
       
-      // Categories
-      allCategories: 'جميع الفئات',
       electronics: 'الإلكترونيات',
       watchesJewelry: 'الساعات والمجوهرات',
       phoneAccessories: 'إكسسوارات الهاتف',

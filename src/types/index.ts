@@ -93,15 +93,3 @@ export interface SaveProductRequest {
   custom_title?: string;
   has_video?: boolean;
 }
-
-export interface Category {
-  id: string;
-  name: string;
-  name_fa?: string;
-}
-
-export interface CategoriesResponse {
-  categories: Category[];
-  total: number;
-  message: string;
-}

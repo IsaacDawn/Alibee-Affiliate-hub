@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useCategories } from "../../hooks/useCategories";
 // import { PriceRangeFilter } from "./PriceRangeFilter";
 
 type Props = {
@@ -16,7 +15,6 @@ type Props = {
   };
   
   export function SettingsDrawer({ open, onClose, value, onChange, currency: _currency }: Props) {
-    const { } = useCategories();
     const [searchQuery, setSearchQuery] = useState("");
     const [searchHistory, setSearchHistory] = useState<string[]>([]);
     
