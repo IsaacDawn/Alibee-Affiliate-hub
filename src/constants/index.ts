@@ -53,7 +53,12 @@ const join = (base: string, path: string) => {
   const cleanPath = path.replace(/^\/+/, '');
   return `${cleanBase}/${cleanPath}`;
 };
-const withPrefix = (p: string) => (API_PREFIX ? join(API_PREFIX, p) : p);
+const withPrefix = (p: string) => {
+  if (!API_PREFIX) return p;
+  const cleanPrefix = API_PREFIX.replace(/\/+$/, '');
+  const cleanPath = p.replace(/^\/+/, '');
+  return `${cleanPrefix}/${cleanPath}`;
+};
 
 export const API_ENDPOINTS = {
   BASE_URL,
