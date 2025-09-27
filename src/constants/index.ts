@@ -48,7 +48,11 @@ const UNSAVE_PATH      = import.meta.env.VITE_API_UNSAVE_PATH   || '/unsave';
 const DEMO_PATH        = import.meta.env.VITE_API_DEMO_PATH     || '/demo';
 const CATEGORIES_PATH  = import.meta.env.VITE_API_CATEGORIES_PATH || '/categories';
 const EXCHANGE_PATH    = import.meta.env.VITE_API_EXCHANGE_PATH || '/exchange';
-const join = (b:string,p:string)=>`${b.replace(/\/+$/,'')}/${p.replace(/^\/+/,'')}`;
+const join = (base: string, path: string) => {
+  const cleanBase = base.replace(/\/+$/, '');
+  const cleanPath = path.replace(/^\/+/, '');
+  return `${cleanBase}/${cleanPath}`;
+};
 const withPrefix = (p: string) => (API_PREFIX ? join(API_PREFIX, p) : p);
 
 export const API_ENDPOINTS = {
