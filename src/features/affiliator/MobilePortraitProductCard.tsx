@@ -50,16 +50,11 @@ export function MobilePortraitProductCard({
   const productId = String(item.product_id ?? "");
 
   // Helper function to check if product is already saved
-  const checkProductExists = async (productId: string): Promise<boolean> => {
-    try {
-      const res = await fetch(`${API_ENDPOINTS.CHECK_PRODUCT_EXISTS}/${encodeURIComponent(productId)}`, {
-        method: "GET",
-      });
-      const data = await res.json();
-      return data?.exists || false;
-    } catch (error) {
-      return false;
-    }
+  // Temporarily disabled due to 404 error on Render.com
+  const checkProductExists = async (_productId: string): Promise<boolean> => {
+    // TODO: Re-enable when Render.com /check endpoint is fixed
+    console.log("checkProductExists disabled - Render.com /check endpoint returns 404");
+    return false;
   };
 
   // Helper function to prepare product data for saving
