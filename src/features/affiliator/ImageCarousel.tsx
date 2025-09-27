@@ -13,12 +13,12 @@ export function ImageCarousel({
   images, 
   mainImage, 
   videoUrl, 
-  className = "w-[28rem] h-[28rem]",
+  className = "w-full h-full",
   autoPlayDelay = 5000,
   showControls = true
 }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [, setIsVideoPlaying] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -50,9 +50,10 @@ export function ImageCarousel({
     console.error('❌ Carousel Error:', error);
   }
 
-  // Initialize loading states
+  // Initialize loading states - only for images, not videos
   useEffect(() => {
-    setLoadingStates(new Array(mediaItems.length).fill(true));
+    const initialStates = mediaItems.map(item => item.type === 'image');
+    setLoadingStates(initialStates);
   }, [mediaItems.length]);
 
   const goToPrevious = () => {
@@ -95,18 +96,24 @@ export function ImageCarousel({
     }
   };
 
-  // Auto-play carousel (optional)
+  // Auto-play carousel (optional) - disabled for videos
   useEffect(() => {
     if (mediaItems.length <= 1 || !autoPlay) return;
     
+    // Don't auto-play if current item is a video
+    const currentItem = mediaItems[currentIndex];
+    if (currentItem?.type === 'video') return;
+    
     const interval = setInterval(() => {
-      if (!isVideoPlaying) {
+      // Only advance if current item is not a video
+      const currentItem = mediaItems[currentIndex];
+      if (currentItem?.type !== 'video') {
         goToNext();
       }
     }, autoPlayDelay); // Change slide every specified seconds
 
     return () => clearInterval(interval);
-  }, [currentIndex, isVideoPlaying, mediaItems.length, autoPlay]);
+  }, [currentIndex, mediaItems.length, autoPlay, mediaItems]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -146,28 +153,38 @@ export function ImageCarousel({
       <div className={`${className} bg-black rounded-2xl shadow-2xl flex items-center justify-center relative overflow-hidden`}>
         {item.type === 'video' ? (
           <video
-            className="w-full h-full object-cover rounded-2xl"
+            className="w-full h-full object-contain rounded-2xl"
             src={item.url}
             poster={item.poster}
             controls
             preload="metadata"
             playsInline
+            autoPlay
+            muted
+            loop
             onPlay={() => setIsVideoPlaying(true)}
             onPause={() => setIsVideoPlaying(false)}
+            ref={(video) => {
+              if (video) {
+                video.play().catch(() => {
+                  // Auto-play failed, which is normal in some browsers
+                });
+              }
+            }}
           />
         ) : (
           <div className="relative w-full h-full">
-            {loadingStates[0] && (
+            {loadingStates[0] && mediaItems[0]?.type === 'image' && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800 rounded-2xl">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
               </div>
             )}
-            <img 
-              src={item.url} 
-              alt="Product" 
-              className={`w-full h-full object-cover rounded-2xl transition-transform duration-300 ${
-                isZoomed ? 'scale-150 cursor-zoom-out' : 'cursor-zoom-in'
-              }`}
+                <img 
+                  src={item.url} 
+                  alt="Product" 
+                  className={`w-full h-full object-contain rounded-2xl transition-transform duration-300 ${
+                    isZoomed ? 'scale-150 cursor-zoom-out' : 'cursor-zoom-in'
+                  }`}
               onClick={() => setIsZoomed(!isZoomed)}
               onLoad={() => {
                 setLoadingStates(prev => {
@@ -216,18 +233,32 @@ export function ImageCarousel({
           >
             {item.type === 'video' ? (
               <video
-                className="w-full h-full object-cover rounded-2xl"
+                className="w-full h-full object-contain rounded-2xl"
                 src={item.url}
                 poster={item.poster}
                 controls
                 preload="metadata"
                 playsInline
+                autoPlay={index === currentIndex}
+                muted
+                loop
                 onPlay={() => setIsVideoPlaying(true)}
                 onPause={() => setIsVideoPlaying(false)}
+                ref={(video) => {
+                  if (video) {
+                    if (index === currentIndex) {
+                      video.play().catch(() => {
+                        // Auto-play failed, which is normal in some browsers
+                      });
+                    } else {
+                      video.pause();
+                    }
+                  }
+                }}
               />
             ) : (
               <div className="relative w-full h-full">
-                {loadingStates[index] && (
+                {loadingStates[index] && mediaItems[index]?.type === 'image' && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-800 rounded-2xl">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
                   </div>
@@ -235,7 +266,7 @@ export function ImageCarousel({
                 <img 
                   src={item.url} 
                   alt={`Product image ${index + 1}`} 
-                  className={`w-full h-full object-cover rounded-2xl transition-transform duration-300 ${
+                  className={`w-full h-full object-contain rounded-2xl transition-transform duration-300 ${
                     isZoomed ? 'scale-150 cursor-zoom-out' : 'cursor-zoom-in'
                   }`}
                   onClick={() => setIsZoomed(!isZoomed)}
@@ -321,8 +352,8 @@ export function ImageCarousel({
         </div>
       )}
 
-      {/* Loading Indicator */}
-      {loadingStates[currentIndex] && (
+      {/* Loading Indicator - Only for images, not videos */}
+      {loadingStates[currentIndex] && mediaItems[currentIndex]?.type === 'image' && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
         </div>
@@ -348,28 +379,12 @@ export function ImageCarousel({
         </div>
       )}
 
-      {/* Zoom Button (only for images) */}
-      {mediaItems[currentIndex]?.type === 'image' && showControls && (
-        <button
-          onClick={() => setIsZoomed(!isZoomed)}
-          className="absolute top-4 left-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          aria-label={isZoomed ? "Zoom out" : "Zoom in"}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {isZoomed ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-            )}
-          </svg>
-        </button>
-      )}
 
       {/* Fullscreen Button */}
       {showControls && (
         <button
           onClick={() => setIsFullscreen(!isFullscreen)}
-          className="absolute top-4 left-16 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          className="absolute top-4 left-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

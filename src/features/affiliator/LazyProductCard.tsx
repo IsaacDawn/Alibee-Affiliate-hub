@@ -7,13 +7,15 @@ interface LazyProductCardProps {
   currency: Currency;
   onSave?: (saved: boolean) => void;
   index: number;
+  isSearchInterfaceOpen?: boolean;
 }
 
 export function LazyProductCard({ 
   item, 
   currency, 
   onSave, 
-  index 
+  index,
+  isSearchInterfaceOpen = false
 }: LazyProductCardProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -55,6 +57,7 @@ export function LazyProductCard({
           item={item}
           currency={currency}
           onSave={onSave}
+          isSearchInterfaceOpen={isSearchInterfaceOpen}
         />
       ) : (
         // Skeleton placeholder while loading

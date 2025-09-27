@@ -51,9 +51,6 @@ class ApiService {
   // Product operations
   async searchProducts(params: {
     q?: string;
-    categoryId?: string;
-    hasVideo?: boolean;
-    sort?: string;
     page?: number;
     pageSize?: number;
   }): Promise<PaginatedResponse<Product>> {
@@ -129,7 +126,7 @@ class ApiService {
 
   // Categories endpoint
   async fetchCategories(): Promise<CategoriesResponse> {
-    return this.request<CategoriesResponse>('/categories');
+    return this.request<CategoriesResponse>(API_ENDPOINTS.CATEGORIES);
   }
 }
 

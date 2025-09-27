@@ -1,7 +1,6 @@
 // src/hooks/useProducts.ts
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_ENDPOINTS } from "../constants";
-import { enhanceSearchQuery } from "../utils/searchEnhancer";
 
 type Product = any;
 
@@ -23,7 +22,7 @@ type StatsResp = {
 function useProducts(arg1?: any, arg2?: any) {
   // Extract q and pageSize from different inputs
   let initialQ = "";
-  let initialPageSize = 5; // 5 products per lazy load for better performance
+  let initialPageSize = 10; // 10 products per search for better initial results
 
   if (typeof arg1 === "string" || arg1 == null) {
     initialQ = (arg1 as string) || "";
@@ -34,18 +33,115 @@ function useProducts(arg1?: any, arg2?: any) {
     initialPageSize = Number(f.pageSize ?? f.limit ?? 5) || 5;
   }
 
+  // All state declarations at the top
   const [q, setQ] = useState<string>(initialQ);
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(initialPageSize);
-  const [filters, setFilters] = useState<any>(arg1 && typeof arg1 === "object" ? arg1 : {});
-
+  const [loadMorePageSize, setLoadMorePageSize] = useState<number>(5);
+  const [filters, _setFilters] = useState<any>(arg1 && typeof arg1 === "object" ? arg1 : {});
   const [items, setItems] = useState<Product[]>([]);
   const [hasMore, setHasMore] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [savedProductsCount, setSavedProductsCount] = useState<number>(0);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
-  // Initial stats (optional)
+  // All useCallback declarations
+  const setFilters = useCallback((newFilters: any) => {
+    _setFilters(newFilters);
+    if (newFilters && typeof newFilters === "object") {
+      const newQ = newFilters.q ?? newFilters.query ?? "";
+      setQ(newQ);
+    }
+  }, []);
+
+  const clearProducts = useCallback(() => {
+    setItems([]);
+    setPage(1);
+    setHasMore(false);
+    setError(null);
+  }, []);
+
+  const _fetchProducts = useCallback(
+    async (nextPage: number, replace: boolean) => {
+      if (replace) {
+        setLoading(true);
+        setIsLoadingMore(false);
+      } else {
+        setIsLoadingMore(true);
+        setLoading(false);
+      }
+      setError(null);
+      
+      try {
+        const endpoint = (q && q.trim()) ? API_ENDPOINTS.SEARCH : API_ENDPOINTS.PRODUCTS;
+        const currentPageSize = replace ? pageSize : loadMorePageSize;
+        
+        const params = new URLSearchParams({
+          page: String(nextPage || 1),
+          pageSize: String(currentPageSize),
+        });
+        
+        if (q && q.trim()) {
+          params.append("q", q);
+          params.append("use_api", "true");
+        }
+        
+        if (filters) {
+          if (filters.sort) params.append("sort", filters.sort);
+          if (filters.minPrice !== undefined && filters.minPrice !== null) {
+            params.append("minPrice", String(filters.minPrice));
+          }
+          if (filters.maxPrice !== undefined && filters.maxPrice !== null) {
+            params.append("maxPrice", String(filters.maxPrice));
+          }
+        }
+        
+        const url = `${endpoint}?${params.toString()}`;
+        const res = await fetch(url);
+        
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        
+        const data: ProductsResp = await res.json();
+        const newItems = Array.isArray(data.items) ? data.items : [];
+        
+        setHasMore(Boolean(data.hasMore));
+        setItems((prev) => {
+          if (replace) {
+            return newItems;
+          } else {
+            const existingIds = new Set(prev.map(item => item.product_id));
+            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.product_id));
+            return [...prev, ...uniqueNewItems];
+          }
+        });
+      } catch (e: any) {
+        setError(e?.message || "Failed to fetch");
+      } finally {
+        setLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [q, pageSize, loadMorePageSize, filters]
+  );
+
+  const loadMore = useCallback(async () => {
+    // Only load more if we have a search query and not loading
+    if (!q || !q.trim() || loading || isLoadingMore) {
+      return;
+    }
+    
+    const next = page + 1;
+    setPage(next);
+    await _fetchProducts(next, false);
+  }, [page, _fetchProducts, q, loading, isLoadingMore]);
+
+  const handleSave = useCallback((a: any, b?: any) => {
+    const savedFlag = typeof a === "boolean" ? a : Boolean(b);
+    setSavedProductsCount((c) => Math.max(0, c + (savedFlag ? 1 : -1)));
+  }, []);
+
+  // All useEffect declarations
   useEffect(() => {
     (async () => {
       try {
@@ -61,88 +157,22 @@ function useProducts(arg1?: any, arg2?: any) {
     })();
   }, []);
 
-  // Core product fetching
-  const _fetchProducts = useCallback(
-    async (nextPage: number, replace: boolean) => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Use search endpoint for all requests
-        const endpoint = API_ENDPOINTS.SEARCH;
-        const params = new URLSearchParams({
-          page: String(nextPage || 1),
-          pageSize: String(pageSize || 5),
-        });
-        
-        // Add search query if provided, otherwise use diverse keywords for homepage
-        if (q) {
-          // Enhance search query with synonyms and related terms
-          const enhancedQuery = enhanceSearchQuery(q);
-          params.append("q", enhancedQuery);
-        } else if (!filters || !filters.categoryId || filters.categoryId === "") {
-          // Homepage - use diverse keywords (excluding automotive to avoid car-only results)
-          const diverseKeywords = [
-            'phone smartphone mobile',
-            'laptop computer notebook', 
-            'fashion clothing dress',
-            'shoes sneakers boots',
-            'home garden furniture',
-            'beauty cosmetics skincare',
-            'sports fitness gym',
-            'toys games children',
-            'jewelry watch accessories',
-            'camera photography',
-            'tablet ipad android',
-            'kitchen cooking utensils',
-            'electronics gadgets tech',
-            'health wellness supplements',
-            'books stationery office'
-          ];
-          const randomKeyword = diverseKeywords[Math.floor(Math.random() * diverseKeywords.length)];
-          params.append("q", randomKeyword);
-        }
-        
-        // Add additional filters if they exist
-        if (filters) {
-          if (filters.categoryId) params.append("categoryId", filters.categoryId);
-          if (filters.sort) params.append("sort", filters.sort);
-          if (filters.minPrice !== undefined && filters.minPrice !== null) {
-            params.append("minPrice", String(filters.minPrice));
-          }
-          if (filters.maxPrice !== undefined && filters.maxPrice !== null) {
-            params.append("maxPrice", String(filters.maxPrice));
-          }
-        }
-        
-        const res = await fetch(`${endpoint}?${params.toString()}`);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        const data: ProductsResp = await res.json();
-        const newItems = Array.isArray(data.items) ? data.items : [];
-        
-        setHasMore(Boolean(data.hasMore));
-        setItems((prev) => {
-          if (replace) {
-            return newItems;
-          } else {
-            // Remove duplicate products based on product_id
-            const existingIds = new Set(prev.map(item => item.product_id));
-            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.product_id));
-            return [...prev, ...uniqueNewItems];
-          }
-        });
-      } catch (e: any) {
-        setError(e?.message || "Failed to fetch");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [q, pageSize, filters]
-  );
+  useEffect(() => {
+    // Clear everything when search changes
+    setItems([]);
+    setPage(1);
+    setHasMore(false);
+    setError(null);
+    setLoading(false);
+    setIsLoadingMore(false);
+    
+    // Only fetch if we have a search query
+    if (q && q.trim()) {
+      _fetchProducts(1, true);
+    }
+  }, [q, pageSize, filters, _fetchProducts]);
 
-  // ✅ Compatible overload:
-  // - fetchProducts()                → page 1, replace=true
-  // - fetchProducts(true)            → replace=true on current page
-  // - fetchProducts(2)               → page 2, replace=true
+  // Function overloads
   function fetchProducts(): Promise<void>;
   function fetchProducts(replace: boolean): Promise<void>;
   function fetchProducts(page: number): Promise<void>;
@@ -156,73 +186,38 @@ function useProducts(arg1?: any, arg2?: any) {
     return _fetchProducts(1, true);
   }
 
-  // Function to immediately clear all products (useful for new searches)
-  const clearProducts = useCallback(() => {
-    console.log("🧹 Clearing all products for new search");
-    setItems([]);
-    setPage(1);
-    setHasMore(false);
-    setError(null);
-  }, []);
-
-  // ✅ Keep previous loadMore
-  const loadMore = useCallback(async () => {
-    const next = page + 1;
-    setPage(next);  // First update the page
-    await _fetchProducts(next, false);
-  }, [page, _fetchProducts]);
-
-  // ✅ Compatible with two call forms:
-  // - handleSave(saved)
-  // - handleSave(productId, saved)
-  function handleSave(saved: boolean): void;
-  function handleSave(productId: string | number, saved: boolean): void;
-  function handleSave(a: any, b?: any) {
-    const savedFlag = typeof a === "boolean" ? a : Boolean(b);
-    setSavedProductsCount((c) => Math.max(0, c + (savedFlag ? 1 : -1)));
-  }
-
-  // When q, pageSize or filters change, fetch from page 1 again
-  useEffect(() => {
-    // Immediately clear existing products when starting a new search
-    setItems([]);
-    setPage(1);
-    setHasMore(false);
-    _fetchProducts(1, true);
-  }, [q, pageSize, filters, _fetchProducts]);
-
   return useMemo(
     () => ({
-      // state
       items,
       hasMore,
       loading,
+      isLoadingMore,
       error,
       page,
       pageSize,
+      loadMorePageSize,
       q,
       savedProductsCount,
       filters,
-
-      // setters
       setQ,
       setPageSize,
+      setLoadMorePageSize,
       setSavedProductsCount,
       setFilters,
-
-      // actions
-      fetchProducts, // (overloaded)
+      fetchProducts,
       loadMore,
-      handleSave, // (overloaded)
+      handleSave,
       clearProducts,
     }),
     [
       items,
       hasMore,
       loading,
+      isLoadingMore,
       error,
       page,
       pageSize,
+      loadMorePageSize,
       q,
       savedProductsCount,
       filters,

@@ -39,13 +39,15 @@ import.meta.env.VITE_API_BASE_URL ||
 // // const DEMO_PATH        = import.meta.env.VITE_API_DEMO_PATH      || '/demo';
 
 
-const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '';
+const API_PREFIX       = import.meta.env.VITE_API_PREFIX        || '/api';
 const HEALTH_PATH      = import.meta.env.VITE_API_HEALTH_PATH   || '/health';
 const STATS_PATH       = import.meta.env.VITE_API_STATS_PATH    || '/stats';
-const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/search'; // Default set to /search
+const PRODUCTS_PATH    = import.meta.env.VITE_API_PRODUCTS_PATH || '/products';
 const SAVE_PATH        = import.meta.env.VITE_API_SAVE_PATH     || '/save';
 const UNSAVE_PATH      = import.meta.env.VITE_API_UNSAVE_PATH   || '/unsave';
 const DEMO_PATH        = import.meta.env.VITE_API_DEMO_PATH     || '/demo';
+const CATEGORIES_PATH  = import.meta.env.VITE_API_CATEGORIES_PATH || '/categories';
+const EXCHANGE_PATH    = import.meta.env.VITE_API_EXCHANGE_PATH || '/exchange';
 const join = (b:string,p:string)=>`${b.replace(/\/+$/,'')}/${p.replace(/^\/+/,'')}`;
 const withPrefix = (p: string) => (API_PREFIX ? join(API_PREFIX, p) : p);
 
@@ -54,6 +56,8 @@ export const API_ENDPOINTS = {
   HEALTH:        join(BASE_URL, withPrefix(HEALTH_PATH)),
   STATS:         join(BASE_URL, withPrefix(STATS_PATH)),
   PRODUCTS:      join(BASE_URL, withPrefix(PRODUCTS_PATH)),
+  CATEGORIES:    join(BASE_URL, withPrefix(CATEGORIES_PATH)),
+  EXCHANGE:      join(BASE_URL, withPrefix(EXCHANGE_PATH)),
   SAVE_PRODUCT:  join(BASE_URL, withPrefix(SAVE_PATH)),
   UPDATE_PRODUCT: join(BASE_URL, withPrefix(SAVE_PATH)),
   CHECK_PRODUCT_EXISTS: join(BASE_URL, withPrefix('/check')),
@@ -62,9 +66,8 @@ export const API_ENDPOINTS = {
   DEMO:          join(BASE_URL, withPrefix(DEMO_PATH)),
   DAILY_PRODUCTS: join(BASE_URL, withPrefix('/daily-products')),
   UPDATE_DESCRIPTION: join(BASE_URL, withPrefix('/update-description')),
+  SEARCH: join(BASE_URL, withPrefix('/search')),
 
-  // For compatibility/readability
-  SEARCH:        join(BASE_URL, withPrefix(PRODUCTS_PATH)),
 };
 export default API_ENDPOINTS;
 export const DEFAULT_PAGE_SIZE = 20;

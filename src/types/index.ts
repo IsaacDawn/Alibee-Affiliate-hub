@@ -52,7 +52,6 @@ export interface Product {
 
 export interface Filters {
   q: string;
-  categoryId: string;
   sort: "volume_desc" | "discount_desc" | "rating_desc";
   minPrice?: number;
   maxPrice?: number;

@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useCategories } from "../../hooks/useCategories";
 // import { PriceRangeFilter } from "./PriceRangeFilter";
-import { getPopularSearchTerms, enhanceSearchQuery } from "../../utils/searchEnhancer";
 
 type Props = {
     open: boolean;
     onClose: () => void;
     value: {
       q: string;
-      categoryId: string;
       sort: "volume_desc" | "discount_desc" | "rating_desc";
       minPrice?: number;
       maxPrice?: number;
@@ -18,8 +16,8 @@ type Props = {
   };
   
   export function SettingsDrawer({ open, onClose, value, onChange, currency: _currency }: Props) {
-    const { categories } = useCategories();
-    const [searchQuery, setSearchQuery] = useState(value.q);
+    const { } = useCategories();
+    const [searchQuery, setSearchQuery] = useState("");
     const [searchHistory, setSearchHistory] = useState<string[]>([]);
     
     // Load search history from localStorage
@@ -34,10 +32,16 @@ type Props = {
       }
     }, []);
     
+    // Set search query when drawer opens
+    useEffect(() => {
+      if (open) {
+        setSearchQuery(value.q || "");
+      }
+    }, [open, value.q]);
+    
     const handleSearch = () => {
       if (searchQuery.trim()) {
         const trimmedQuery = searchQuery.trim();
-        console.log(`🔍 Searching for: "${trimmedQuery}" - clearing existing products`);
         onChange({ ...value, q: trimmedQuery });
         
         // Add to search history
@@ -50,7 +54,6 @@ type Props = {
     };
 
     const handleQuickSearch = (searchTerm: string) => {
-      console.log(`🔍 Quick search for: "${searchTerm}" - clearing existing products`);
       setSearchQuery(searchTerm);
       onChange({ ...value, q: searchTerm });
       
@@ -90,12 +93,6 @@ type Props = {
             }}
           />
           
-          {/* Search Enhancement Preview */}
-          {searchQuery.trim() && enhanceSearchQuery(searchQuery) !== searchQuery.trim() && !searchQuery.trim().match(/^\d{10,}$/) && (
-            <div className="text-xs text-gray-400 bg-gray-900 p-2 rounded">
-              <span className="text-gray-500">Enhanced search:</span> {enhanceSearchQuery(searchQuery)}
-            </div>
-          )}
           
           {/* Product ID Search Indicator */}
           {searchQuery.trim().match(/^\d{10,}$/) && (
@@ -112,61 +109,7 @@ type Props = {
           </button>
         </div>
 
-        {/* Categories Dropdown */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-300">Category</label>
-          <select 
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-            value={value.categoryId}
-            onChange={(e) => {
-              const newCategoryId = e.target.value;
-              const categoryName = categories.find(cat => cat.id === newCategoryId)?.name || "";
-              
-              if (newCategoryId !== value.categoryId) {
-                if (categoryName && categoryName !== "All Categories") {
-                  setSearchQuery(categoryName);
-                  onChange({ ...value, categoryId: newCategoryId, q: categoryName });
-                } else {
-                  setSearchQuery("");
-                  onChange({ ...value, categoryId: newCategoryId, q: "" });
-                }
-              } else {
-                onChange({ ...value, categoryId: newCategoryId });
-              }
-            }}
-          >
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-        </div>
 
-        {/* Popular Categories */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-bold">Popular Categories</h3>
-          <div className="flex flex-wrap gap-2">
-            {categories.slice(1, 5).map(cat => (
-              <button 
-                key={cat.id}
-                className="bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-600 transition-all duration-300"
-                onClick={() => {
-                  console.log(`🔍 Category search for: "${cat.name}"`);
-                  setSearchQuery(cat.name);
-                  onChange({ ...value, categoryId: cat.id, q: cat.name });
-                  
-                  // Add to search history
-                  const newHistory = [cat.name, ...searchHistory.filter(h => h !== cat.name)].slice(0, 10);
-                  setSearchHistory(newHistory);
-                  localStorage.setItem('searchHistory', JSON.stringify(newHistory));
-                  
-                  onClose(); // Close drawer after selection
-                }}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
 
 
         {/* Hot Products Button */}
@@ -175,7 +118,7 @@ type Props = {
           onClick={() => {
             console.log(`🔍 Hot products search`);
             setSearchQuery("hot products");
-            onChange({ ...value, categoryId: "", q: "hot products" });
+            onChange({ ...value, q: "hot products" });
             
             // Add to search history
             const newHistory = ["hot products", ...searchHistory.filter(h => h !== "hot products")].slice(0, 10);
@@ -210,7 +153,7 @@ type Props = {
         <div className="space-y-2">
           <h3 className="text-lg font-bold">Quick Search</h3>
           <div className="flex flex-wrap gap-2">
-            {getPopularSearchTerms().slice(0, 6).map((term) => (
+            {['phone', 'laptop', 'watch', 'shoes', 'bag', 'hat'].map((term) => (
               <button 
                 key={term}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-sm transition-all duration-300"

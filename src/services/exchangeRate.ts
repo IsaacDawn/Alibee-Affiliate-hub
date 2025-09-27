@@ -49,10 +49,13 @@ class ExchangeRateService {
     }
 
     try {
-      const url = `${API_ENDPOINTS.BASE_URL}/exchange-rates?base_currency=${baseCurrency}`;
+      const url = `${API_ENDPOINTS.EXCHANGE}?base_currency=${baseCurrency}`;
       
       const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        console.warn(`Exchange rate API failed: ${response.status}, using fallback rates`);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       
       
@@ -92,7 +95,29 @@ class ExchangeRateService {
         };
       }
       
-      throw error;
+      // Return fallback rates if no cache available
+      console.warn('Using fallback exchange rates');
+      const fallbackRates = {
+        'USD': 1.0,
+        'EUR': 0.85,
+        'GBP': 0.73,
+        'CNY': 7.2,
+        'JPY': 110.0,
+        'CAD': 1.25,
+        'AUD': 1.35,
+        'CHF': 0.92,
+        'ILS': 3.5
+      };
+      
+      return {
+        status: 'success',
+        message: 'Using fallback exchange rates',
+        base_currency: baseCurrency,
+        rates: fallbackRates,
+        supported_currencies: Object.keys(fallbackRates),
+        timestamp: Date.now() / 1000,
+        source: 'fallback'
+      };
     }
   }
 

@@ -88,13 +88,22 @@ const EXCHANGE_RATES: Record<string, number> = {
   IDR: 14000.0
 };
 
-// Convert amount from USD to target currency
-export function convert(amount: number, currency: Currency): number {
-  const fromRate = EXCHANGE_RATES['USD'] || 1.0;
-  const toRate = EXCHANGE_RATES[currency.code] || 1.0;
+// Convert amount from one currency to another
+export function convert(amount: number, fromCurrency: string, toCurrency: string): number {
+  if (fromCurrency === toCurrency) {
+    return amount;
+  }
+
+  const fromRate = EXCHANGE_RATES[fromCurrency] || 1.0;
+  const toRate = EXCHANGE_RATES[toCurrency] || 1.0;
   
-  // Convert from USD to target currency
+  // Convert from source currency to target currency
   return (amount / fromRate) * toRate;
+}
+
+// Legacy function for backward compatibility
+export function convertFromUSD(amount: number, currency: Currency): number {
+  return convert(amount, 'USD', currency.code);
 }
 
 // Get real-time exchange rates from API (optional enhancement)
@@ -113,16 +122,16 @@ export async function getRealTimeExchangeRates(): Promise<Record<string, number>
 }
 
 // Convert with real-time rates if available
-export async function convertWithRealTimeRates(amount: number, currency: Currency): Promise<number> {
+export async function convertWithRealTimeRates(amount: number, fromCurrency: string, toCurrency: string): Promise<number> {
   try {
     const realRates = await getRealTimeExchangeRates();
-    if (realRates && realRates[currency.code]) {
-      return amount * realRates[currency.code];
+    if (realRates && realRates[toCurrency]) {
+      return amount * realRates[toCurrency];
     }
   } catch (error) {
     console.warn('Using static exchange rates:', error);
   }
   
   // Fallback to static rates
-  return convert(amount, currency);
+  return convert(amount, fromCurrency, toCurrency);
 }
