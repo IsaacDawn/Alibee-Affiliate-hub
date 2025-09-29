@@ -257,10 +257,16 @@ export function DesktopProductCard({
       const res = await fetch(`${API_ENDPOINTS.CHECK_PRODUCT_EXISTS}/${encodeURIComponent(productId)}`, {
         method: "GET",
       });
+      
+      if (!res.ok) {
+        console.warn(`Check endpoint returned ${res.status}, falling back to false`);
+        return false;
+      }
+      
       const data = await res.json();
       return data?.exists || false;
     } catch (error) {
-      console.error("Error checking product existence:", error);
+      console.warn("Error checking product existence, falling back to false:", error);
       return false;
     }
   };
@@ -300,6 +306,16 @@ export function DesktopProductCard({
             method: "DELETE",
           }
         );
+        
+        if (!res.ok) {
+          console.warn(`Unsave endpoint returned ${res.status}, but continuing with local state`);
+          // Continue with local state even if server fails
+          setSaved(false);
+          setSavedAt(null);
+          onSave?.(false);
+          return;
+        }
+        
         const data = await res.json();
         if (data?.success) {
           setSaved(false);
@@ -336,6 +352,16 @@ export function DesktopProductCard({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
+          
+          if (!res.ok) {
+            console.warn(`Save endpoint returned ${res.status}, but continuing with local state`);
+            // Continue with local state even if server fails
+            setSaved(true);
+            const nowISO = new Date().toISOString();
+            setSavedAt(nowISO);
+            onSave?.(true);
+            return;
+          }
           
           const data = await res.json();
           if (data?.success) {

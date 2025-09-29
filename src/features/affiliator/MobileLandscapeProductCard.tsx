@@ -257,10 +257,16 @@ export function MobileLandscapeProductCard({
       const res = await fetch(`${API_ENDPOINTS.CHECK_PRODUCT_EXISTS}/${encodeURIComponent(productId)}`, {
         method: "GET",
       });
+      
+      if (!res.ok) {
+        console.warn(`Check endpoint returned ${res.status}, falling back to false`);
+        return false;
+      }
+      
       const data = await res.json();
       return data?.exists || false;
     } catch (error) {
-      console.error("Error checking product existence:", error);
+      console.warn("Error checking product existence, falling back to false:", error);
       return false;
     }
   };
