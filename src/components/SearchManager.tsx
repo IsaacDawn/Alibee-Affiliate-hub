@@ -58,7 +58,7 @@ export const SearchManager: React.FC<SearchManagerProps> = ({
             const productIndex = parseInt(entry.target.getAttribute('data-product-index') || '1');
             const productId = entry.target.getAttribute('data-product-id');
             setCurrentProductIndex(productIndex);
-            console.log(`👀 [SCROLL TO PRODUCT] Product ${productIndex}: ID ${productId}`);
+            // Product scroll tracking removed for cleaner console
           }
         });
       },

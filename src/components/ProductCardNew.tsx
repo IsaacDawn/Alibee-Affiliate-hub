@@ -562,7 +562,7 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
         try {
           await preloadImage(uniqueImages[currentImageIndex]);
         } catch (error) {
-          console.warn('Failed to preload current image:', error);
+          // Silently handle preload errors
         }
       }
       
@@ -571,7 +571,7 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
       try {
         await Promise.all(preloadPromises);
       } catch (error) {
-        console.warn('Some images failed to preload:', error);
+        // Silently handle preload errors
       }
     };
 
