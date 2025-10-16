@@ -299,17 +299,19 @@ export const useProductCards = (searchParams: SearchParams) => {
         
         // Check if we've displayed all available products
         if (currentDisplayedCount + 5 >= totalAvailable) {
-          // Still try to fetch more from API if hasMore is true
-          if (hasMore) {
+          // Only fetch from API if hasMore is true and we have less than 200 products
+          if (hasMore && totalAvailable < 200) {
             await fetchMoreFromAPI();
           } else {
             setHasMore(false);
           }
         }
       } else {
-        // No more products in allProducts, fetch from API
-        if (hasMore) {
+        // No more products in allProducts, fetch from API only if we have less than 200
+        if (hasMore && totalAvailable < 200) {
           await fetchMoreFromAPI();
+        } else {
+          setHasMore(false);
         }
       }
     } catch (err: any) {
