@@ -1,86 +1,52 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState } from 'react';
+import { useLanguage, type Language } from '../hooks/useLanguage';
+import { Globe } from 'lucide-react';
 
-const LANGS = {
-  en: "English",
-  he: "עברית",
-  ar: "العربية",
-};
-
-interface LanguageSelectorProps {
-  currentLang: string;
-  onLanguageChange: (lang: string) => void;
-  isMobile?: boolean;
-}
-
-export function LanguageSelector({ currentLang, onLanguageChange, isMobile: _isMobile = false }: LanguageSelectorProps) {
+const LanguageSelector: React.FC = () => {
+  const { currentLanguage, changeLanguage, languages } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const currentLanguageName = LANGS[currentLang as keyof typeof LANGS] || "English";
+  const currentLang = languages.find(l => l.code === currentLanguage);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Dropdown Trigger */}
+    <div className="relative" dir="ltr">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-1.5 py-1 rounded-md transition-all duration-300 hover:bg-white/20 hover:scale-105 bg-black/20 backdrop-blur-sm border border-white/20 text-white"
+        className="glass-card flex items-center space-x-2 px-4 py-2 rounded-2xl hover:bg-white/10 transition-all duration-300"
       >
-        <span className="text-xs">🌍</span>
-        <span className="text-xs font-medium">
-          {currentLanguageName}
+        <Globe className="w-5 h-5 text-white" />
+        <span className="text-white font-medium">{currentLang?.flag}</span>
+        <span className="text-white text-sm font-medium">
+          {currentLang?.code.toUpperCase()}
         </span>
-        <svg 
-          className={`w-2.5 h-2.5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} 
-          fill="currentColor" 
-          viewBox="0 0 20 20"
-        >
-          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-        </svg>
       </button>
 
-      {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 w-32 bg-gray-800/95 backdrop-blur-xl border border-gray-600/50 rounded-md shadow-2xl z-50 overflow-hidden">
-          <div className="py-1">
-            {Object.entries(LANGS).map(([code, name]) => (
-              <button
-                key={code}
-                onClick={() => {
-                  onLanguageChange(code);
-                  setIsOpen(false);
-                }}
-                className={`w-full px-2 py-1.5 text-left transition-all duration-300 flex items-center gap-1.5 text-xs ${
-                  currentLang === code
-                    ? "bg-blue-500/20 text-blue-400 font-medium"
-                    : "text-gray-300 hover:bg-gray-700/50 hover:text-white"
-                }`}
-                style={{ direction: code === 'he' || code === 'ar' ? 'rtl' : 'ltr' }}
-              >
-                <span className="text-xs">🌍</span>
-                <span className="text-xs flex-1">{name}</span>
-                {currentLang === code && (
-                  <svg className="w-2.5 h-2.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </button>
-            ))}
-          </div>
+        <div className="absolute top-full right-0 mt-2 glass-card-strong rounded-2xl p-2 min-w-[200px] z-50" dir="ltr">
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => {
+                changeLanguage(lang.code);
+                setIsOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                currentLanguage === lang.code
+                  ? 'bg-purple-500/20 text-purple-300'
+                  : 'text-white hover:bg-white/10'
+              }`}
+            >
+              <span className="text-xl">{lang.flag}</span>
+              <span className="font-medium">{lang.name} {lang.code.toUpperCase()}</span>
+              {currentLanguage === lang.code && (
+                <div className="ml-auto w-2 h-2 bg-purple-400 rounded-full"></div>
+              )}
+            </button>
+          ))}
         </div>
       )}
     </div>
   );
-}
+};
+
+export default LanguageSelector;

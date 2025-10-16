@@ -1,95 +1,59 @@
-// Shared TypeScript types and interfaces
-export interface Currency {
-  code: string;
-  symbol: string;
-  name: string;
-  flag: string;
-}
-
 export interface Product {
-  product_id: string;
-  product_title: string;
-  product_main_image_url: string;
-  product_video_url?: string;
-  sale_price: number;
-  sale_price_currency: string;
-  original_price?: number;
-  original_price_currency?: string;
-  lastest_volume: number;
-  rating_weighted: number | null;
-  first_level_category_id?: string;
-  promotion_link: string;
-  saved_at?: string;
-  fetched_at?: string;
-  // Additional rating-related fields
-  rating?: number | null;
-  score?: number | null;
-  average_rating?: number | null;
-  evaluate_rate?: string | null;
-  // Enhanced fields from demo pattern
-  product_description?: string;
+  id: string;
+  title: string;
+  price: number;
+  originalPrice?: number;
+  currency: string;
+  originalCurrency?: string;
+  originalPriceCurrency?: string; // Backend field: original_price_currency
+  // Target currency fields (converted prices)
+  priceTarget?: number; // Backend field: sale_price_target
+  originalPriceTarget?: number; // Backend field: original_price_target
+  currencyTarget?: string; // Backend field: sale_price_currency_target
+  originalCurrencyTarget?: string; // Backend field: original_price_currency_target
+  image: string;
+  images?: string[]; // Array of additional product images
+  video?: string; // Product video URL
+  rating: number;
+  reviewCount: number;
+  url: string;
+  category?: string;
   discount?: number;
-  commission_rate?: number;
-  shop_title?: string;
-  shop_url?: string;
-  product_detail_url?: string;
-  product_small_image_urls?: string[];
-  first_level_category_name?: string;
-  second_level_category_name?: string;
-  rating_percent?: string;
-  positive_feedback_rate?: string;
-  avg_evaluation_rate?: string;
-  avg_rating_percent?: string;
-  product_score?: string;
-  product_score_stars?: number;
-  product_category?: string;
-  images_link?: string[];
-  video_link?: string;
-  // Additional fields for enhanced display
-  custom_title?: string;
-  original_currency?: string;
-}
-
-export interface Filters {
-  q: string;
-  sort: "volume_desc" | "discount_desc" | "rating_desc";
-  minPrice?: number;
-  maxPrice?: number;
-}
-
-
-export interface Stats {
-  totalProducts: number;
-  savedProducts: number;
-  totalSearches: number;
-}
-
-export interface SystemStatus {
-  db: string;
-  message?: string;
-  ali_client: string;
-  ali_api_status?: string;
+  commissionRate?: number;
+  salesVolume?: number;
+  volume?: number; // Backend field: lastest_volume
+  productId?: string;
+  productDetailUrl?: string;
+  discountPercentage?: number;
+  productScoreStars?: number;
+  scoreStars?: number; // Backend field: product_score_stars
+  firstLevelCategoryName?: string;
+  secondLevelCategoryName?: string;
+  productCategory?: string;
+  customTitle?: string | null;
+  onTitleChange?: (productId: string, newTitle: string) => void;
 }
 
 export interface ApiResponse<T> {
+  data: T;
   success: boolean;
-  data?: T;
-  error?: string;
   message?: string;
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  hasMore: boolean;
+export interface SearchParams {
+  query: string;
+  page?: number;
+  limit?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  category?: string;
+  sortBy?: 'price' | 'rating' | 'reviews' | 'newest';
+  sortOrder?: 'asc' | 'desc';
+  hasVideo?: boolean;
 }
 
-export interface SaveProductRequest {
-  product_id: string;
-  product_title: string;
-  promotion_link: string;
-  product_category?: string;
-  custom_title?: string;
-  has_video?: boolean;
+export interface Stats {
+  totalProducts: number;
+  totalCategories: number;
+  lastUpdate: string;
 }

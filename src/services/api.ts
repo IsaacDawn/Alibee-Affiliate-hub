@@ -1,130 +1,128 @@
-// API service layer for all backend communications
-import { API_ENDPOINTS } from '../constants';
-import type { 
-  Product, 
-  Stats, 
-  SystemStatus, 
-  PaginatedResponse, 
-  SaveProductRequest,
-  ApiResponse,
-} from '../types';
+import axios from 'axios';
 
-class ApiService {
-  private baseUrl: string;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://alibee-affiliate-api.onrender.com';
 
-  constructor(baseUrl: string = API_ENDPOINTS.BASE_URL) {
-    this.baseUrl = baseUrl;
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000, // Increased from 10s to 30s
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor
+api.interceptors.request.use(
+  (config) => {
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    return config;
+  },
+  (error) => {
+    console.error('API Request Error:', error);
+    return Promise.reject(error);
   }
+);
 
-  private async request<T>(
-    endpoint: string, 
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    
-    const defaultOptions: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    };
-
-    const response = await fetch(url, { ...defaultOptions, ...options });
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
+// Response interceptor
+api.interceptors.response.use(
+  (response) => {
+    console.log(`API Response: ${response.status} ${response.config.url}`);
+    return response;
+  },
+  (error) => {
+    console.error('API Response Error:', error);
+    return Promise.reject(error);
   }
+);
 
-  // Health and system status
-  async getHealth(): Promise<SystemStatus> {
-    return this.request<SystemStatus>(API_ENDPOINTS.HEALTH);
-  }
+// Like/Unlike API functions
+export const likeProduct = async (productData: {
+  product_id: string;
+  product_title: string;
+  promotion_link: string;
+  product_category?: string;
+  custom_title?: string;
+  has_video?: boolean;
+}) => {
+  const response = await api.post('/api/like', productData);
+  return response.data;
+};
 
-  async getStats(): Promise<Stats> {
-    return this.request<Stats>(API_ENDPOINTS.STATS);
-  }
+export const unlikeProduct = async (productId: string) => {
+  const response = await api.delete(`/api/like/${productId}`);
+  return response.data;
+};
 
-  // Product operations
-  async searchProducts(params: {
-    q?: string;
-    page?: number;
-    pageSize?: number;
-  }): Promise<PaginatedResponse<Product>> {
-    const searchParams = new URLSearchParams();
-    
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.append(key, String(value));
-      }
-    });
+export const getLikeStatus = async (productId: string) => {
+  const response = await api.get(`/api/like/${productId}/status`);
+  return response.data;
+};
 
-    return this.request<PaginatedResponse<Product>>(
-      `${API_ENDPOINTS.SEARCH}?${searchParams.toString()}`
-    );
-  }
+export const getBatchLikeStatus = async (productIds: string[]) => {
+  const response = await api.post('/api/likes/batch-status', productIds);
+  return response.data;
+};
 
-  async getDemoProducts(): Promise<PaginatedResponse<Product>> {
-    return this.request<PaginatedResponse<Product>>(API_ENDPOINTS.DEMO);
-  }
+export const getLikedProductsCount = async () => {
+  const response = await api.get('/api/likes/count');
+  return response.data;
+};
 
-  async getSavedProducts(params: {
-    q?: string;
-    categoryId?: string;
-    hasVideo?: boolean;
-    sort?: string;
-    page?: number;
-    pageSize?: number;
-  }): Promise<PaginatedResponse<Product>> {
-    const searchParams = new URLSearchParams();
-    
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.append(key, String(value));
-      }
-    });
+// Custom Titles API functions
+export const getCustomTitle = async (productId: string) => {
+  const response = await api.get(`/api/products/${productId}/custom-title`);
+  return response.data;
+};
 
-    return this.request<PaginatedResponse<Product>>(
-      `${API_ENDPOINTS.PRODUCTS}?${searchParams.toString()}`
-    );
-  }
+export const updateCustomTitle = async (productId: string, customTitle: string) => {
+  const response = await api.put(`/api/products/${productId}/custom-title?custom_title=${encodeURIComponent(customTitle)}`);
+  return response.data;
+};
 
-  // Save/unsave operations
-  async saveProduct(product: SaveProductRequest): Promise<ApiResponse<any>> {
-    return this.request<ApiResponse<any>>(API_ENDPOINTS.SAVE_PRODUCT, {
-      method: 'POST',
-      body: JSON.stringify(product),
-    });
-  }
+export const deleteCustomTitle = async (productId: string) => {
+  const response = await api.delete(`/api/products/${productId}/custom-title`);
+  return response.data;
+};
 
-  async unsaveProduct(productId: string): Promise<ApiResponse<any>> {
-    return this.request<ApiResponse<any>>(
-      `${API_ENDPOINTS.UNSAVE_PRODUCT}/${productId}`,
-      {
-        method: 'DELETE',
-      }
-    );
-  }
+export const getBatchCustomTitles = async (productIds: string[]) => {
+  const response = await api.post('/api/products/batch/custom-titles', productIds);
+  return response.data;
+};
 
-  // New save/unsave endpoints for simple backend
-  async saveProductSimple(productData: any): Promise<ApiResponse<any>> {
-    return this.request<ApiResponse<any>>('/save', {
-      method: 'POST',
-      body: JSON.stringify(productData),
-    });
-  }
+// Dictionary/Translations API functions
+export const getTranslations = async () => {
+  const response = await api.get('/api/translations');
+  return response.data;
+};
 
-  async unsaveProductSimple(productId: string): Promise<ApiResponse<any>> {
-    return this.request<ApiResponse<any>>('/unsave', {
-      method: 'POST',
-      body: JSON.stringify({ product_id: productId }),
-    });
-  }
+export const getTranslationsByLanguage = async (language: string) => {
+  const response = await api.get(`/api/translations/${language}`);
+  return response.data;
+};
 
-}
+// Currency conversion API functions
+export const convertCurrency = async (price: number, fromCurrency: string, toCurrency: string) => {
+  const response = await api.post('/api/currency/convert', {
+    price,
+    from_currency: fromCurrency,
+    to_currency: toCurrency
+  });
+  return response.data;
+};
 
-// Export singleton instance
-export const apiService = new ApiService();
-export default apiService;
+export const detectCurrency = async (text: string) => {
+  const response = await api.post('/api/currency/detect', { text });
+  return response.data;
+};
+
+export const getCurrencyRates = async () => {
+  const response = await api.get('/api/currency/rates');
+  return response.data;
+};
+
+// Product by ID API function
+export const getProductById = async (productId: string) => {
+  const response = await api.get(`/api/product/${productId}`);
+  return response.data;
+};
+
+export default api;
