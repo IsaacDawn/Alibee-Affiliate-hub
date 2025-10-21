@@ -20,10 +20,21 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'https://alibee-affiliatehub-api.onrender.com',
+        changeOrigin: true,
+        secure: true
+      }
+    }
   },
   preview: {
     port: 4173,
     host: true
+  },
+  define: {
+    // Default environment variables
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify('https://alibee-affiliatehub-api.onrender.com')
   }
 })
