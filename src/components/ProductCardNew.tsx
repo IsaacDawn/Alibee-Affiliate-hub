@@ -531,6 +531,7 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
   const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
   const [isInViewport, setIsInViewport] = useState(false);
   const [showVideo, setShowVideo] = useState(hasVideo); // Start with video if available
+  const [nextImageLoading, setNextImageLoading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -581,37 +582,115 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
   }, [uniqueImages.join(','), currentImageIndex]);
 
   // Navigation functions
-  const goToPreviousImage = () => {
+  const goToPreviousImage = async () => {
     if (hasVideo && showVideo) {
       // If showing video, switch to last image
       setShowVideo(false);
-      setCurrentImageIndex(uniqueImages.length - 1);
+      const targetIndex = uniqueImages.length - 1;
+      const targetImageUrl = uniqueImages[targetIndex];
+      
+      if (!preloadedImages.has(targetImageUrl)) {
+        setNextImageLoading(true);
+        try {
+          await preloadImage(targetImageUrl);
+        } catch (error) {
+          // Continue even if preload fails
+        } finally {
+          setNextImageLoading(false);
+        }
+      }
+      setCurrentImageIndex(targetIndex);
     } else if (currentImageIndex > 0) {
       // Navigate to previous image
-      setCurrentImageIndex(currentImageIndex - 1);
+      const targetIndex = currentImageIndex - 1;
+      const targetImageUrl = uniqueImages[targetIndex];
+      
+      if (!preloadedImages.has(targetImageUrl)) {
+        setNextImageLoading(true);
+        try {
+          await preloadImage(targetImageUrl);
+        } catch (error) {
+          // Continue even if preload fails
+        } finally {
+          setNextImageLoading(false);
+        }
+      }
+      setCurrentImageIndex(targetIndex);
     } else if (hasVideo) {
       // If on first image and product has video, switch to video
       setShowVideo(true);
     } else if (uniqueImages.length > 1) {
       // Loop to last image
-      setCurrentImageIndex(uniqueImages.length - 1);
+      const targetIndex = uniqueImages.length - 1;
+      const targetImageUrl = uniqueImages[targetIndex];
+      
+      if (!preloadedImages.has(targetImageUrl)) {
+        setNextImageLoading(true);
+        try {
+          await preloadImage(targetImageUrl);
+        } catch (error) {
+          // Continue even if preload fails
+        } finally {
+          setNextImageLoading(false);
+        }
+      }
+      setCurrentImageIndex(targetIndex);
     }
   };
 
-  const goToNextImage = () => {
+  const goToNextImage = async () => {
     if (hasVideo && !showVideo && currentImageIndex === uniqueImages.length - 1) {
       // If on last image and product has video, switch to video
       setShowVideo(true);
     } else if (currentImageIndex < uniqueImages.length - 1) {
       // Navigate to next image
-      setCurrentImageIndex(currentImageIndex + 1);
+      const targetIndex = currentImageIndex + 1;
+      const targetImageUrl = uniqueImages[targetIndex];
+      
+      if (!preloadedImages.has(targetImageUrl)) {
+        setNextImageLoading(true);
+        try {
+          await preloadImage(targetImageUrl);
+        } catch (error) {
+          // Continue even if preload fails
+        } finally {
+          setNextImageLoading(false);
+        }
+      }
+      setCurrentImageIndex(targetIndex);
     } else if (hasVideo && showVideo) {
       // If showing video, switch to first image
       setShowVideo(false);
-      setCurrentImageIndex(0);
+      const targetIndex = 0;
+      const targetImageUrl = uniqueImages[targetIndex];
+      
+      if (!preloadedImages.has(targetImageUrl)) {
+        setNextImageLoading(true);
+        try {
+          await preloadImage(targetImageUrl);
+        } catch (error) {
+          // Continue even if preload fails
+        } finally {
+          setNextImageLoading(false);
+        }
+      }
+      setCurrentImageIndex(targetIndex);
     } else if (uniqueImages.length > 1) {
       // Loop to first image
-      setCurrentImageIndex(0);
+      const targetIndex = 0;
+      const targetImageUrl = uniqueImages[targetIndex];
+      
+      if (!preloadedImages.has(targetImageUrl)) {
+        setNextImageLoading(true);
+        try {
+          await preloadImage(targetImageUrl);
+        } catch (error) {
+          // Continue even if preload fails
+        } finally {
+          setNextImageLoading(false);
+        }
+      }
+      setCurrentImageIndex(targetIndex);
     }
   };
 
@@ -700,16 +779,33 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
   useEffect(() => {
     if (uniqueImages.length <= 1 || hasVideo) return;
 
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       // Only auto-rotate images for products without video
-      if (imageLoaded) {
+      if (imageLoaded && !nextImageLoading) {
         const nextIndex = (currentImageIndex + 1) % uniqueImages.length;
-        setCurrentImageIndex(nextIndex);
+        const nextImageUrl = uniqueImages[nextIndex];
+        
+        // Check if next image is already preloaded
+        if (preloadedImages.has(nextImageUrl)) {
+          setCurrentImageIndex(nextIndex);
+        } else {
+          // Preload next image before switching
+          setNextImageLoading(true);
+          try {
+            await preloadImage(nextImageUrl);
+            setCurrentImageIndex(nextIndex);
+          } catch (error) {
+            // If preload fails, still switch to avoid getting stuck
+            setCurrentImageIndex(nextIndex);
+          } finally {
+            setNextImageLoading(false);
+          }
+        }
       }
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [uniqueImages.length, imageLoaded, currentImageIndex, hasVideo]);
+  }, [uniqueImages.length, imageLoaded, currentImageIndex, hasVideo, preloadedImages, nextImageLoading]);
 
   const formatPrice = (price: number, currencyCode: string) => {
     const symbols: { [key: string]: string } = {

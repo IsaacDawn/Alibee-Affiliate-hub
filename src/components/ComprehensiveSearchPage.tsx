@@ -13,7 +13,7 @@ const SearchPageContainer = styled.div`
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg, #6B46C1 0%, #4C1D95 100%);
-  z-index: 100;
+  z-index: 1000;
   overflow-y: auto;
   max-height: 100vh;
   display: flex;

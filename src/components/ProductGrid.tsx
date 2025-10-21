@@ -165,7 +165,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     // Auto loading is now handled by IntersectionObserver
   };
 
-  if (loading && products.length === 0) {
+  if (loading || (products.length === 0 && !error)) {
     return (
       <LoadingContainer>
         <div className="loading">⏳</div>
@@ -185,7 +185,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     );
   }
 
-  if (products.length === 0 && !loading) {
+  if (products.length === 0 && !loading && !error) {
     return (
       <EmptyState>
         <EmptyStateTitle>No products found</EmptyStateTitle>

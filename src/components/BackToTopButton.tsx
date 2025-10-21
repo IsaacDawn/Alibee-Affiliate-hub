@@ -6,7 +6,7 @@ const BackToTopContainer = styled.div<{ $visible: boolean }>`
   position: fixed !important;
   bottom: 16px !important;
   right: 20px !important;
-  z-index: 999999 !important;
+  z-index: 100 !important;
   opacity: ${props => props.$visible ? 1 : 0};
   visibility: ${props => props.$visible ? 'visible' : 'hidden'};
   transition: all 0.3s ease;

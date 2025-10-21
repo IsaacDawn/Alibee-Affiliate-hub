@@ -11,13 +11,13 @@ export interface SearchParams extends Omit<BaseSearchParams, 'sortBy'> {
 const STORAGE_KEY = 'alibee_search_params';
 
 const defaultSearchParams: SearchParams = {
-  query: '',
+  query: 'general',
   page: 1,
   limit: 150,
   hasVideo: undefined,
   minPrice: 0,
-  maxPrice: 1000000,
-  sortBy: undefined,
+  maxPrice: 150000,
+  sortBy: 'price_acs',
   sortOrder: 'desc',
   category: undefined,
   target_currency: 'USD',

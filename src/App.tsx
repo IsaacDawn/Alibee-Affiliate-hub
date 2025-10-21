@@ -191,7 +191,7 @@ function AppContent() {
       console.log('🌐 [API REQUEST] POST /api/save', productData);
       
       // API call to save product
-      const response = await fetch('https://alibee-affiliate-api.onrender.com/api/save', {
+      const response = await fetch('https://alibee-affiliatehub-api.onrender.com/api/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -224,7 +224,7 @@ function AppContent() {
       console.log('🌐 [API REQUEST] DELETE /api/save/' + productId);
       
       // API call to remove product
-      const response = await fetch(`https://alibee-affiliate-api.onrender.com/api/save/${productId}`, {
+      const response = await fetch(`https://alibee-affiliatehub-api.onrender.com/api/save/${productId}`, {
         method: 'DELETE'
       });
 
@@ -304,7 +304,7 @@ function AppContent() {
         
         console.log('🌐 [API REQUEST] PUT /api/save/' + productId + '/title', { title: newTitle });
         
-        const response = await fetch(`https://alibee-affiliate-api.onrender.com/api/save/${productId}/title`, {
+        const response = await fetch(`https://alibee-affiliatehub-api.onrender.com/api/save/${productId}/title`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -463,9 +463,9 @@ function AppContent() {
       )}
 
       {/* Status Bar - Bottom Left */}
-      <StatusBar>
-        <span>V2025.0.1.8.7</span>
-      </StatusBar>
+        <StatusBar>
+          <span>V2025.0.1.9.2</span>
+        </StatusBar>
 
       {/* Back to Top Button - Bottom Right */}
       <BackToTop />

@@ -17,7 +17,6 @@ const removeDuplicateProducts = (products: Product[]): Product[] => {
 };
 
 const mapApiProductToProduct = (apiProduct: any): Product => {
-  // Mapping API product to frontend Product type (logging removed for cleaner console)
 
   // Extract images array from various possible fields
   let images = [];
@@ -80,7 +79,7 @@ const mapApiProductToProduct = (apiProduct: any): Product => {
 
 export const useProductCards = (searchParams: SearchParams) => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -115,7 +114,7 @@ export const useProductCards = (searchParams: SearchParams) => {
         pageSize: 200,
         target_currency: searchParams.target_currency || 'USD',
         min_price: searchParams.minPrice || 0,
-        max_price: searchParams.maxPrice || 100000,
+        max_price: searchParams.maxPrice || 150000,
         sort_by: searchParams.sortBy || 'volume_desc',
         only_with_video: searchParams.hasVideo ? 1 : 0,
         category: searchParams.category || undefined
@@ -129,18 +128,40 @@ export const useProductCards = (searchParams: SearchParams) => {
           pageSize: 200, // Load first 200 products
           target_currency: searchParams.target_currency || 'USD',
           min_price: searchParams.minPrice || 0,
-          max_price: searchParams.maxPrice || 100000,
-          sort_by: searchParams.sortBy || 'volume_desc',
+          max_price: searchParams.maxPrice || 150000,
+          sort_by: searchParams.sortBy || 'price_acs',
           only_with_video: searchParams.hasVideo ? 1 : 0,
           category: searchParams.category || undefined
         }
       });
 
       console.log('📊 [TOTAL PRODUCTS] Total products in JSON response:', response.data.total || response.data.items?.length || 0);
+      console.log('🔍 [DEBUG] Raw API response:', {
+        success: response.data.success,
+        total: response.data.total,
+        hasMore: response.data.hasMore,
+        itemsLength: response.data.items?.length,
+        query: response.data.query,
+        filters: response.data.filters
+      });
 
       const apiProducts = response.data.items || [];
+      console.log('🔍 [DEBUG] First 3 API products:', apiProducts.slice(0, 3).map((p: any) => ({
+        id: p.product_id,
+        title: p.product_title?.substring(0, 50) + '...',
+        price: p.sale_price,
+        currency: p.sale_price_currency
+      })));
+      
       const mappedProducts = apiProducts.map(mapApiProductToProduct);
       const newProducts = removeDuplicateProducts(mappedProducts);
+      
+      console.log('🔍 [DEBUG] First 3 mapped products:', newProducts.slice(0, 3).map((p: Product) => ({
+        id: p.id,
+        title: p.title?.substring(0, 50) + '...',
+        price: p.price,
+        currency: p.currency
+      })));
       
       console.log('📊 [LOADING INFO] AllProducts length:', newProducts.length, 'Displayed:', 10, 'HasMore:', newProducts.length > 0);
       
@@ -206,7 +227,7 @@ export const useProductCards = (searchParams: SearchParams) => {
         pageSize: 200,
         target_currency: searchParams.target_currency || 'USD',
         min_price: searchParams.minPrice || 0,
-        max_price: searchParams.maxPrice || 100000,
+        max_price: searchParams.maxPrice || 150000,
         sort_by: searchParams.sortBy || 'volume_desc',
         only_with_video: searchParams.hasVideo ? 1 : 0,
         category: searchParams.category || undefined
@@ -219,8 +240,8 @@ export const useProductCards = (searchParams: SearchParams) => {
           pageSize: 200, // Load 200 products per batch
           target_currency: searchParams.target_currency || 'USD',
           min_price: searchParams.minPrice || 0,
-          max_price: searchParams.maxPrice || 100000,
-          sort_by: searchParams.sortBy || 'volume_desc',
+          max_price: searchParams.maxPrice || 150000,
+          sort_by: searchParams.sortBy || 'price_acs',
           only_with_video: searchParams.hasVideo ? 1 : 0,
           category: searchParams.category || undefined
         }
@@ -255,6 +276,12 @@ export const useProductCards = (searchParams: SearchParams) => {
 
 
   // Trigger search when params change
+  // Initial load on mount
+  useEffect(() => {
+    fetchProducts();
+  }, []); // Run only once on mount
+
+  // Load products when search params change
   useEffect(() => {
     if (searchParams.query && isProductId(searchParams.query)) {
       fetchProductById(searchParams.query);
@@ -285,7 +312,7 @@ export const useProductCards = (searchParams: SearchParams) => {
 
     try {
       // Check if we have more products in allProducts to display
-      const currentDisplayedCount = displayedProducts.length;
+      const currentDisplayedCount = products.length; // Use products.length instead of displayedProducts.length
       const totalAvailable = allProducts.length;
       
       console.log('🔄 [LOAD MORE] Current displayed:', currentDisplayedCount, 'Total available:', totalAvailable, 'HasMore:', hasMore);
@@ -330,7 +357,7 @@ export const useProductCards = (searchParams: SearchParams) => {
     setDisplayedCount(0);
     setHasMore(false);
     setCurrentPage(1);
-    setLoading(false);
+    setLoading(true); // Keep loading true when clearing
     setLoadingMore(false);
     setError(null);
     isLoadingMoreRef.current = false;
