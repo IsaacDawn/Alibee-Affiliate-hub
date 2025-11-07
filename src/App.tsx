@@ -617,7 +617,7 @@ function AppContent() {
 
       {/* Status Bar - Bottom Left */}
         <StatusBar>
-          <span>V2025.0.1.9.3</span>
+          <span>V2025.0.1.9.6</span>
         </StatusBar>
 
       {/* Back to Top Button - Bottom Right */}
