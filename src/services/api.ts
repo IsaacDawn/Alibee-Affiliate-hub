@@ -1,18 +1,19 @@
 import axios from 'axios';
 
 // Determine API base URL
-// In production, use environment variable or relative URL
+// In production, use environment variable or production API URL
 // In development, use localhost
 const getApiBaseUrl = (): string => {
-  // If environment variable is set, use it
+  // If environment variable is set, use it (highest priority)
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
   
-  // In production (when running on a domain, not localhost), use relative URL
+  // In production (when running on a domain, not localhost)
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    // Use relative URL in production to avoid local network permission requests
-    return '';
+    // Use production API URL to avoid local network permission requests
+    // This is the default production backend URL
+    return 'https://alibee-affiliatehub-api.onrender.com';
   }
   
   // Only use localhost in development
