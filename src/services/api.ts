@@ -1,7 +1,25 @@
 import axios from 'axios';
 
-// For local development, use localhost. For production, use environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8080';
+// Determine API base URL
+// In production, use environment variable or relative URL
+// In development, use localhost
+const getApiBaseUrl = (): string => {
+  // If environment variable is set, use it
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // In production (when running on a domain, not localhost), use relative URL
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // Use relative URL in production to avoid local network permission requests
+    return '';
+  }
+  
+  // Only use localhost in development
+  return 'http://127.0.0.1:8080';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Log the API base URL being used
 console.log(`🌐 [API CONFIG] API_BASE_URL: ${API_BASE_URL}`);
