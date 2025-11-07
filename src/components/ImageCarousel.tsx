@@ -56,14 +56,27 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   // const { t } = useLanguage(); // Removed
 
 
-  // Use smart image loading
-  const { loadedImages, loadingImages, isImageLoaded, isImageLoading } = useSmartImageLoading({
+  // Use smart image loading - only load first image initially
+  const { loadedImages, loadingImages, isImageLoaded, isImageLoading, loadAdditionalImages } = useSmartImageLoading({
     images,
     isVisible: isVisible || hasIntersected,
+    loadOnlyFirst: true, // Only load first image initially
+    isActive: isVisible && hasIntersected, // Consider active if visible
     onVisibilityChange: () => {
       // Visibility change handled silently
     }
   });
+
+  // Load additional images when carousel becomes active
+  useEffect(() => {
+    if (isVisible && hasIntersected && images.length > 1) {
+      // Small delay to ensure first image is loaded
+      const timer = setTimeout(() => {
+        loadAdditionalImages();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, hasIntersected, images.length, loadAdditionalImages]);
 
   // Create media array (video first if available, then images)
   const mediaItems = React.useMemo(() => {

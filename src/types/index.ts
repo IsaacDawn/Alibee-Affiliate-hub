@@ -31,6 +31,8 @@ export interface Product {
   secondLevelCategoryName?: string;
   productCategory?: string;
   customTitle?: string | null;
+  savedProductCategory?: string | null;
+  isSavedInDb?: boolean; // Flag to indicate if product is saved in database
   onTitleChange?: (productId: string, newTitle: string) => void;
 }
 

@@ -86,11 +86,13 @@ interface ProductGridProps {
   loadingMore: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
-  onLike?: (productId: string) => void;
+  onLike?: (productId: string, selectedCategory?: string) => void;
   onShare?: (product: Product) => void;
   onBuy?: (product: Product) => void;
   onTitleChange?: (productId: string, newTitle: string) => void;
+  onCategoryChange?: (productId: string, newCategory: string) => void;
   isLiked?: (productId: string) => boolean;
+  productCategories?: Map<string, string>;
   error?: string | null;
   showDebug?: boolean;
 }
@@ -105,7 +107,9 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   onShare,
   onBuy,
   onTitleChange,
+  onCategoryChange,
   isLiked,
+  productCategories = new Map(),
   error,
   showDebug = false
 }) => {
@@ -216,8 +220,12 @@ const ProductGrid: React.FC<ProductGridProps> = ({
             onLike={onLike}
             onShare={onShare}
             onBuy={onBuy}
+            onCategoryChange={onCategoryChange}
             isLiked={isLiked?.(product.id)}
+            selectedCategory={productCategories.get(product.id) || product.savedProductCategory || 'other'}
             showDebug={showDebug}
+            cardIndex={index}
+            totalCards={products.length}
           />
         </ProductWrapper>
       ))}

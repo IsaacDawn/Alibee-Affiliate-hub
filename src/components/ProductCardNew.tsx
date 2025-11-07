@@ -306,13 +306,13 @@ const LikeButton = styled.button`
   transition: all 0.2s ease;
   z-index: 2;
 
-  /* حالت عادی - آنلایک */
+  /* Normal state - unliked */
   &:hover {
     background: rgba(0, 0, 0, 0.8);
     transform: scale(1.1);
   }
 
-  /* حالت لایک شده */
+  /* Liked state */
   &.liked {
     background: #ff6b6b;
     color: white;
@@ -481,13 +481,60 @@ const BuyButton = styled.button`
   }
 `;
 
+const CategoryLabel = styled.div`
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 6px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+`;
+
+const CategoryDropdown = styled.select`
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+  outline: none;
+  width: 100%;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  &:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  }
+
+  option {
+    background: #1a1a1a;
+    color: white;
+    padding: 6px;
+  }
+`;
+
+const CategoryContainer = styled.div`
+  margin-top: 8px;
+`;
+
 interface ProductCardNewProps {
   product: Product;
-  onLike?: (productId: string) => void;
+  onLike?: (productId: string, selectedCategory?: string) => void;
   onShare?: (product: Product) => void;
   onBuy?: (product: Product) => void;
+  onCategoryChange?: (productId: string, newCategory: string) => void;
   isLiked?: boolean;
+  selectedCategory?: string;
   showDebug?: boolean;
+  cardIndex?: number; // Index of this card in the grid
+  totalCards?: number; // Total number of cards
 }
 
 const ProductCardNew: React.FC<ProductCardNewProps> = ({
@@ -495,13 +542,120 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
   onLike,
   onShare,
   onBuy,
+  onCategoryChange,
   isLiked = false,
-  showDebug = false
+  selectedCategory = 'other',
+  showDebug = false,
+  cardIndex = 0,
+  totalCards = 0
 }) => {
   const { t, currentLanguage } = useTranslation();
   
   // Local state for the current displayed title
   const [currentTitle, setCurrentTitle] = useState(product.customTitle || product.title || 'Product Title');
+  
+  // Available categories
+  const categories = [
+    { value: 'other', label: 'Other' },
+    { value: 'fashion', label: 'Fashion' },
+    { value: 'shoes', label: 'Shoes' },
+    { value: 'jewelery', label: 'Jewelery' },
+    { value: 'car accessories', label: 'Car Accessories' },
+    { value: 'cellphone', label: 'Cellphone' }
+  ];
+  
+  // Function to normalize product_category from JSON to match dropdown values
+  const normalizeCategory = (category: string | undefined | null): string => {
+    if (!category) return 'other';
+    
+    const normalized = category.toLowerCase().trim();
+    const dropdownValues = categories.map(cat => cat.value);
+    
+    // Exact match (case-insensitive)
+    if (dropdownValues.includes(normalized)) {
+      return normalized;
+    }
+    
+    // Partial match with keywords
+    if (normalized.includes('fashion') || normalized.includes('clothing') || normalized.includes('apparel')) {
+      return 'fashion';
+    }
+    if (normalized.includes('shoe') || normalized.includes('footwear')) {
+      return 'shoes';
+    }
+    if (normalized.includes('jewel') || normalized.includes('jewelry')) {
+      return 'jewelery';
+    }
+    if (normalized.includes('car') || normalized.includes('automotive') || normalized.includes('vehicle')) {
+      return 'car accessories';
+    }
+    if (normalized.includes('phone') || normalized.includes('mobile') || normalized.includes('cell') || normalized.includes('smartphone')) {
+      return 'cellphone';
+    }
+    
+    // No match found, return 'other'
+    return 'other';
+  };
+  
+  // Calculate initial category: savedProductCategory > normalized productCategory (final value from JSON) > selectedCategory > other
+  const getInitialCategory = (): string => {
+    // Priority 1: If product is saved in database, use savedProductCategory (from database)
+    if (product.savedProductCategory) {
+      return product.savedProductCategory;
+    }
+    // Priority 2: Use productCategory from JSON (this is the final value - either from database or API)
+    // Normalize it to match dropdown values
+    if (product.productCategory) {
+      return normalizeCategory(product.productCategory);
+    }
+    // Priority 3: Use selectedCategory from props
+    if (selectedCategory) {
+      return selectedCategory;
+    }
+    // Default: other
+    return 'other';
+  };
+  
+  // Local state for selected category
+  const [localCategory, setLocalCategory] = useState<string>(getInitialCategory());
+  
+  // Track if category was manually changed by user
+  const categoryManuallyChangedRef = useRef<boolean>(false);
+  
+  // Update local category when product data changes
+  // productCategory in JSON is the final value (overridden by database if product exists in DB)
+  useEffect(() => {
+    // If user manually changed the category, don't override it
+    if (categoryManuallyChangedRef.current) {
+      return;
+    }
+    
+    // Priority: selectedCategory (from productCategories state) > savedProductCategory > normalized productCategory (final from JSON) > other
+    let newCategory = 'other';
+    
+    // Priority 1: If selectedCategory is provided (from productCategories state), use it
+    // This is the most recent user selection, even if product is not liked yet
+    if (selectedCategory && selectedCategory !== 'other') {
+      newCategory = selectedCategory;
+    }
+    // Priority 2: If product is saved in database, use savedProductCategory
+    else if (product.savedProductCategory) {
+      newCategory = product.savedProductCategory;
+    } 
+    // Priority 3: Use productCategory from JSON (final value - already overridden by backend if in DB)
+    // Normalize it to match dropdown values
+    else if (product.productCategory) {
+      const normalized = normalizeCategory(product.productCategory);
+      newCategory = normalized;
+    }
+    
+    setLocalCategory(newCategory);
+  }, [selectedCategory, product.savedProductCategory, product.productCategory, product.id]);
+  
+  // Reset manual change flag when product changes
+  useEffect(() => {
+    categoryManuallyChangedRef.current = false;
+  }, [product.id]);
   
   // Update currentTitle when product changes
   useEffect(() => {
@@ -530,8 +684,10 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
   const [isInViewport, setIsInViewport] = useState(false);
+  const [isActiveCard, setIsActiveCard] = useState(false); // Whether this is the active/current card
   const [showVideo, setShowVideo] = useState(hasVideo); // Start with video if available
   const [nextImageLoading, setNextImageLoading] = useState(false);
+  const [additionalImagesLoaded, setAdditionalImagesLoaded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -555,31 +711,70 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
     });
   };
 
-  // Preload all images when component mounts or images change
+  // Optimized image loading: Only load main image initially, additional images only for active card
   useEffect(() => {
-    const preloadAllImages = async () => {
-      // First, preload the current image immediately
-      if (uniqueImages[currentImageIndex]) {
-        try {
-          await preloadImage(uniqueImages[currentImageIndex]);
-        } catch (error) {
-          // Silently handle preload errors
-        }
-      }
-      
-      // Then preload the rest
-      const preloadPromises = uniqueImages.map(src => preloadImage(src));
-      try {
-        await Promise.all(preloadPromises);
-      } catch (error) {
-        // Silently handle preload errors
-      }
-    };
+    if (uniqueImages.length === 0) return;
 
-    if (uniqueImages.length > 0) {
-      preloadAllImages();
+    // Always load main image (first image) when card becomes visible (via IntersectionObserver)
+    if (isInViewport) {
+      const mainImage = uniqueImages[0];
+      if (mainImage && !preloadedImages.has(mainImage)) {
+        preloadImage(mainImage).catch(() => {
+          // Silently handle preload errors
+        });
+      }
     }
-  }, [uniqueImages.join(','), currentImageIndex]);
+  }, [uniqueImages, isInViewport, preloadedImages]);
+
+  // Load additional images only for active card
+  useEffect(() => {
+    if (isActiveCard && !additionalImagesLoaded && uniqueImages.length > 1) {
+      setAdditionalImagesLoaded(true);
+      // Small delay to ensure main image is loaded first
+      setTimeout(() => {
+        // Load additional images with delay
+        uniqueImages.slice(1).forEach((url, index) => {
+          if (!preloadedImages.has(url)) {
+            setTimeout(() => {
+              preloadImage(url).catch(() => {
+                // Silently handle preload errors
+              });
+            }, (index + 1) * 300); // 300ms delay between each image
+          }
+        });
+      }, 200); // 200ms delay before starting to load additional images
+    }
+  }, [isActiveCard, additionalImagesLoaded, uniqueImages, preloadedImages]);
+
+  // Preload main image of next card when current card becomes active
+  useEffect(() => {
+    if (isActiveCard && cardIndex >= 0 && cardIndex < totalCards - 1) {
+      // Find next card element
+      const nextCardElement = document.querySelector(`[data-product-index="${cardIndex + 2}"]`);
+      if (nextCardElement) {
+        // Get the next card's product data from the DOM or find it in the products array
+        // For now, we'll rely on the next card's own IntersectionObserver to load its main image
+        // But we can trigger it earlier by observing the next card
+        const nextCardObserver = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                // Next card is approaching viewport, its own component will handle loading
+                // This observer just ensures we're watching for it
+                nextCardObserver.disconnect();
+              }
+            });
+          },
+          {
+            threshold: 0.1,
+            rootMargin: '300px' // Start watching when 300px away (earlier than default)
+          }
+        );
+        nextCardObserver.observe(nextCardElement);
+        return () => nextCardObserver.disconnect();
+      }
+    }
+  }, [isActiveCard, cardIndex, totalCards]);
 
   // Navigation functions
   const goToPreviousImage = async () => {
@@ -742,18 +937,24 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
     }
   }, [currentImageIndex, preloadedImages, uniqueImages]);
 
-  // Intersection Observer for video autoplay
+  // Intersection Observer for detecting active card and video autoplay
   useEffect(() => {
-    if (!hasVideo || !cardRef.current) return;
+    if (!cardRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const isVisible = entry.isIntersecting;
+          const intersectionRatio = entry.intersectionRatio;
+          
           setIsInViewport(isVisible);
           
+          // Card is considered active if it's more than 50% visible in viewport center
+          const isActive = isVisible && intersectionRatio >= 0.5;
+          setIsActiveCard(isActive);
+          
           // Pause/play video based on visibility
-          if (videoRef.current && showVideo) {
+          if (hasVideo && videoRef.current && showVideo) {
             if (isVisible) {
               videoRef.current.play().catch(console.error);
             } else {
@@ -763,7 +964,7 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
         });
       },
       {
-        threshold: 0.3, // Trigger when 30% of the card is visible
+        threshold: [0, 0.3, 0.5, 0.7, 1.0], // Multiple thresholds for better detection
         rootMargin: '0px 0px 0px 0px'
       }
     );
@@ -823,16 +1024,16 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
 
-    // همیشه 5 ستاره نمایش می‌دهیم
+    // Always display 5 stars
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
-        // ستاره‌های کامل (پر)
+        // Full stars (filled)
         stars.push(<Star key={i} $filled>★</Star>);
       } else if (i === fullStars && hasHalfStar) {
-        // ستاره نیمه (پر)
+        // Half star (filled)
         stars.push(<Star key={i} $filled>★</Star>);
       } else {
-        // ستاره‌های خالی
+        // Empty stars
         stars.push(<Star key={i}>☆</Star>);
       }
     }
@@ -842,7 +1043,23 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onLike) {
-      onLike(product.id);
+      // Pass the currently selected category when liking
+      onLike(product.id, localCategory);
+    }
+  };
+  
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.stopPropagation();
+    const newCategory = e.target.value;
+    setLocalCategory(newCategory);
+    
+    // Mark that category was manually changed by user
+    categoryManuallyChangedRef.current = true;
+    
+    // Always update category in state (even if not liked yet)
+    // This ensures that when user likes the product, the selected category is preserved
+    if (onCategoryChange) {
+      onCategoryChange(product.id, newCategory);
     }
   };
 
@@ -1003,7 +1220,23 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
           }}
         />
         
-        {/* دسته‌بندی - زیر عنوان */}
+        {/* Category Dropdown */}
+        <CategoryContainer>
+          <CategoryLabel>Custom Category</CategoryLabel>
+          <CategoryDropdown
+            value={localCategory}
+            onChange={handleCategoryChange}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {categories.map(cat => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
+            ))}
+          </CategoryDropdown>
+        </CategoryContainer>
+        
+        {/* Category - under title */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
           <MultiLangPropertyBox $currentLang={currentLanguage} style={{ 
             background: 'rgba(0, 0, 0, 0.3)',
@@ -1021,30 +1254,30 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
         </div>
         
         
-        {/* خصوصیات در دو ستون */}
+        {/* Properties in two columns */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: '1fr 1fr', 
           gap: '8px',
           marginBottom: '8px'
         }}>
-          {/* ستون چپ */}
+          {/* Left column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {/* شناسه */}
+            {/* ID */}
             <MultiLangPropertyBox $currentLang={currentLanguage} style={{ color: '#fbbf24' }}>
               <span className="lang-en">ID: {product.id}</span>
               <span className="lang-he">מזהה: {product.id}</span>
               <span className="lang-ar">المعرف: {product.id}</span>
             </MultiLangPropertyBox>
 
-            {/* قیمت */}
+            {/* Price */}
             <MultiLangPropertyBox $currentLang={currentLanguage} style={{ color: '#ffffff' }}>
               <span className="lang-en">Price: {formatPrice(product.priceTarget || product.price || 0, product.currencyTarget || product.currency)}</span>
               <span className="lang-he">מחיר: {formatPrice(product.priceTarget || product.price || 0, product.currencyTarget || product.currency)}</span>
               <span className="lang-ar">السعر: {formatPrice(product.priceTarget || product.price || 0, product.currencyTarget || product.currency)}</span>
             </MultiLangPropertyBox>
 
-            {/* قیمت اصلی */}
+            {/* Original Price */}
             {(product.originalPriceTarget || product.originalPrice) && (
               <MultiLangPropertyBox $currentLang={currentLanguage} style={{ color: '#ff6b6b', textDecoration: 'line-through' }}>
                 <span className="lang-en">Original Price: {formatPrice(product.originalPriceTarget || product.originalPrice || 0, product.currencyTarget || product.currency)}</span>
@@ -1053,7 +1286,7 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
               </MultiLangPropertyBox>
             )}
 
-            {/* نوع ارز */}
+            {/* Currency Type */}
             <MultiLangPropertyBox $currentLang={currentLanguage} style={{ color: '#60a5fa' }}>
               <span className="lang-en">Currency Type: {product.currencyTarget || product.currency}</span>
               <span className="lang-he">סוג מטבע: {product.currencyTarget || product.currency}</span>
@@ -1061,30 +1294,30 @@ const ProductCardNew: React.FC<ProductCardNewProps> = ({
             </MultiLangPropertyBox>
           </div>
 
-          {/* ستون راست */}
+          {/* Right column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {/* تخفیف */}
+            {/* Discount */}
             <MultiLangPropertyBox $currentLang={currentLanguage} style={{ color: '#fbbf24' }}>
               <span className="lang-en">Discount: {(product.discount || product.discountPercentage || 0).toFixed(1)}%</span>
               <span className="lang-he">הנחה: {(product.discount || product.discountPercentage || 0).toFixed(1)}%</span>
               <span className="lang-ar">الخصم: {(product.discount || product.discountPercentage || 0).toFixed(1)}%</span>
             </MultiLangPropertyBox>
 
-            {/* کمیسیون */}
+            {/* Commission */}
             <MultiLangPropertyBox $currentLang={currentLanguage} style={{ color: '#fb7185' }}>
               <span className="lang-en">Commission: {product.commissionRate || 0}%</span>
               <span className="lang-he">עמלה: {product.commissionRate || 0}%</span>
               <span className="lang-ar">العمولة: {product.commissionRate || 0}%</span>
             </MultiLangPropertyBox>
 
-            {/* تعداد فروش */}
+            {/* Sales Volume */}
             <MultiLangPropertyBox $currentLang={currentLanguage} style={{ color: '#34d399' }}>
               <span className="lang-en">Sales Volume: {(product.volume || product.salesVolume || 0).toLocaleString()}</span>
               <span className="lang-he">נפח מכירות: {(product.volume || product.salesVolume || 0).toLocaleString()}</span>
               <span className="lang-ar">حجم المبيعات: {(product.volume || product.salesVolume || 0).toLocaleString()}</span>
             </MultiLangPropertyBox>
 
-            {/* امتیاز کاربری */}
+            {/* User Rating */}
             <MultiLangPropertyBox $currentLang={currentLanguage} style={{ color: '#a78bfa', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
               <span className="lang-en">Rating:</span>
               <span className="lang-he">דירוג:</span>

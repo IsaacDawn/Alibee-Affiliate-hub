@@ -13,12 +13,16 @@ interface UseSmartImageLoadingProps {
   images: string[];
   isVisible: boolean;
   onVisibilityChange?: (visible: boolean) => void;
+  loadOnlyFirst?: boolean; // Only load first image initially
+  isActive?: boolean; // Whether this card is the active/current card
 }
 
 export const useSmartImageLoading = ({ 
   images, 
   isVisible, 
-  onVisibilityChange 
+  onVisibilityChange,
+  loadOnlyFirst = false,
+  isActive = false
 }: UseSmartImageLoadingProps) => {
   const [imageCache, setImageCache] = useState<ImageCache>({});
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
@@ -151,27 +155,32 @@ export const useSmartImageLoading = ({
   // Load images when component becomes visible
   useEffect(() => {
     if (isVisible && images.length > 0) {
-      // Load first image immediately
+      // Always load first image immediately when visible
       if (images[0] && !imageCache[images[0]]?.loaded && !imageCache[images[0]]?.loading) {
         loadImage(images[0]).catch(() => {
           // Silently handle image load errors
         });
       }
 
-      // Load remaining images with delay to prioritize first image
-      images.slice(1).forEach((url, index) => {
-        if (!imageCache[url]?.loaded && !imageCache[url]?.loading) {
-          setTimeout(() => {
-            if (visibilityRef.current) {
-              loadImage(url).catch(() => {
-                // Silently handle image load errors
-              });
-            }
-          }, (index + 1) * 200); // 200ms delay between each image
-        }
-      });
+      // Only load additional images if:
+      // 1. loadOnlyFirst is false (legacy behavior), OR
+      // 2. This is the active card (user is viewing it)
+      if (!loadOnlyFirst || isActive) {
+        // Load remaining images with delay to prioritize first image
+        images.slice(1).forEach((url, index) => {
+          if (!imageCache[url]?.loaded && !imageCache[url]?.loading) {
+            setTimeout(() => {
+              if (visibilityRef.current) {
+                loadImage(url).catch(() => {
+                  // Silently handle image load errors
+                });
+              }
+            }, (index + 1) * 300); // 300ms delay between each image (increased for better performance)
+          }
+        });
+      }
     }
-  }, [isVisible, images, loadImage, imageCache]);
+  }, [isVisible, images, loadImage, imageCache, loadOnlyFirst, isActive]);
 
   // Cancel loading when component becomes invisible
   useEffect(() => {
@@ -256,11 +265,29 @@ export const useSmartImageLoading = ({
     }
   }, [images, imageCache, cleanupCache]);
 
+  // Function to manually load additional images (for active card)
+  const loadAdditionalImages = useCallback(() => {
+    if (images.length > 1) {
+      images.slice(1).forEach((url, index) => {
+        if (!imageCache[url]?.loaded && !imageCache[url]?.loading) {
+          setTimeout(() => {
+            if (visibilityRef.current) {
+              loadImage(url).catch(() => {
+                // Silently handle image load errors
+              });
+            }
+          }, index * 300); // 300ms delay between each image
+        }
+      });
+    }
+  }, [images, imageCache, loadImage]);
+
   return {
     loadedImages,
     loadingImages,
     imageCache,
     loadImage,
+    loadAdditionalImages, // New function to load additional images
     cleanupCache,
     isImageLoaded: (url: string) => imageCache[url]?.loaded || false,
     isImageLoading: (url: string) => imageCache[url]?.loading || false

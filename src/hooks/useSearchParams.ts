@@ -35,7 +35,6 @@ export const useSearchParams = () => {
         // Merge with defaults to ensure all properties exist
         const mergedParams = { ...defaultSearchParams, ...parsedParams };
         setSearchParamsState(mergedParams);
-        console.log('📱 [SEARCH PARAMS] Loaded from localStorage:', mergedParams);
       }
     } catch (error) {
       console.error('Error loading search params from localStorage:', error);
@@ -62,7 +61,6 @@ export const useSearchParams = () => {
     setSearchParamsState(defaultSearchParams);
     try {
       localStorage.removeItem(STORAGE_KEY);
-      console.log('🗑️ [SEARCH PARAMS] Cleared from localStorage');
     } catch (error) {
       console.error('Error clearing search params from localStorage:', error);
     }

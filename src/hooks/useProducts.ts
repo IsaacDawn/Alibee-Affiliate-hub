@@ -33,7 +33,8 @@ const mapApiProductToProduct = (apiProduct: any): Product => {
   
   const mappedProduct = {
     id: apiProduct.product_id?.toString() || '',
-    title: apiProduct.product_title || '',
+    // If custom_title exists in database, use it instead of product_title
+    title: apiProduct.custom_title || apiProduct.product_title || '',
     price: apiProduct.sale_price || 0,
     originalPrice: apiProduct.original_price || undefined,
     currency: apiProduct.sale_price_currency || apiProduct.original_currency || 'USD',
@@ -60,7 +61,15 @@ const mapApiProductToProduct = (apiProduct: any): Product => {
     productScoreStars: apiProduct.product_score_stars || 0,
     firstLevelCategoryName: apiProduct.first_level_category_name || '',
     secondLevelCategoryName: apiProduct.second_level_category_name || '',
+    // productCategory from JSON (final value - already overridden by backend if product exists in DB)
+    // This is the final product_category value that should be used for normalization
     productCategory: apiProduct.product_category || '',
+    customTitle: apiProduct.custom_title || undefined,
+    // If product is saved in database (is_saved_in_db flag), use product_category as savedProductCategory
+    // The product_category at this point is already from database (overridden by backend)
+    savedProductCategory: (apiProduct.is_saved_in_db === true || apiProduct.is_saved_in_db === "true") ? (apiProduct.product_category || undefined) : undefined,
+    // Flag to indicate if product is saved in database
+    isSavedInDb: apiProduct.is_saved_in_db === true || apiProduct.is_saved_in_db === "true" || false
   };
   
   
@@ -155,7 +164,6 @@ export const useProducts = (params: SearchParams) => {
   const fetchInitialProducts = async () => {
     if (loading) return;
     
-    console.log('🚀 [INITIAL LOAD] Starting to fetch initial products...');
     setLoading(true);
     setError(null);
     setIsInitialLoad(true);
@@ -174,7 +182,6 @@ export const useProducts = (params: SearchParams) => {
     }
 
     try {
-      console.log('📡 [API CALL] Requesting 150 products from comprehensive search endpoint...');
       const response = await api.get('/api/search/comprehensive', {
         params: {
           q: 'all',
@@ -188,28 +195,37 @@ export const useProducts = (params: SearchParams) => {
         },
       });
 
-      console.log('✅ [API RESPONSE] Received response:', {
-        success: response.data.success,
-        totalItems: response.data.items?.length || 0,
-        hasMore: response.data.hasMore,
-        currencyConversion: response.data.currency_conversion
-      });
-
       const apiProducts = response.data.items || [];
-      console.log('📦 [JSON PROCESSING] Processing', apiProducts.length, 'products from JSON...');
+      
+      // Debug: Check if is_saved_in_db exists in any product
+      const productsWithFlag = apiProducts.filter((p: any) => p.hasOwnProperty('is_saved_in_db'));
+      console.log(`🔍 [DEBUG] Total products: ${apiProducts.length}, Products with is_saved_in_db flag: ${productsWithFlag.length}`);
+      
+      // Check if any products have is_saved_in_db flag
+      const savedProducts = apiProducts.filter((p: any) => p.is_saved_in_db === true);
+      if (savedProducts.length > 0) {
+        console.log(`📦 ${savedProducts.length} products found in database:`);
+        savedProducts.forEach((p: any) => {
+          console.log(`   - Product ID: ${p.product_id} | Category: ${p.product_category || 'other'}`);
+        });
+      } else {
+        console.log(`⚠️ No products with is_saved_in_db=true found. Checking first 3 products:`, apiProducts.slice(0, 3).map((p: any) => ({
+          product_id: p.product_id,
+          is_saved_in_db: p.is_saved_in_db,
+          product_category: p.product_category,
+          custom_title: p.custom_title
+        })));
+      }
       
       const newProducts = apiProducts.map(mapApiProductToProduct);
-      console.log('🔄 [MAPPING] Mapped', newProducts.length, 'products to frontend format');
       
       // Store all products
       setAllProducts(newProducts);
-      console.log('💾 [STORAGE] Stored', newProducts.length, 'products in allProducts state');
       
       // Display only first 5 products initially
       const firstFiveProducts = newProducts.slice(0, 5);
       setDisplayedProducts(firstFiveProducts);
       setDisplayedCount(5);
-      console.log('👁️ [DISPLAY] Displaying first 5 products:', firstFiveProducts.map((p: Product) => ({ id: p.id, title: p.title.substring(0, 30) + '...' })));
       
       // Use the hasMore value from API response
       const apiHasMore = response.data.hasMore !== undefined ? response.data.hasMore : true;
@@ -236,32 +252,20 @@ export const useProducts = (params: SearchParams) => {
     try {
       // Check if we have more products to display from already fetched data
       if (displayedCount < allProducts.length) {
-        console.log('📜 [LAZY LOAD] Loading more products from already fetched data...');
-        console.log('📊 [LAZY LOAD] Current state:', {
-          displayedCount,
-          totalFetched: allProducts.length,
-          hasMore
-        });
-        
         // Load 5 more products from already fetched data
         const nextDisplayCount = Math.min(displayedCount + 5, allProducts.length);
         const newDisplayedProducts = allProducts.slice(0, nextDisplayCount);
         setDisplayedProducts(newDisplayedProducts);
         setDisplayedCount(nextDisplayCount);
         
-        console.log('👁️ [LAZY LOAD] Now displaying', nextDisplayCount, 'products out of', allProducts.length, 'fetched');
-        
         // If we've displayed all fetched products, try to fetch more from API
         if (nextDisplayCount >= allProducts.length && hasMore) {
-          console.log('🔄 [LAZY LOAD] All fetched products displayed, fetching more from API...');
           await fetchMoreFromAPI();
         }
       } else if (hasMore) {
-        console.log('🔄 [LAZY LOAD] No more cached products, fetching from API...');
         // Fetch more products from API
         await fetchMoreFromAPI();
       } else {
-        console.log('🏁 [LAZY LOAD] No more products available');
         setHasMore(false);
       }
       
@@ -389,7 +393,6 @@ export const useProducts = (params: SearchParams) => {
     
     // If query is 'all', use fetchInitialProducts instead
     if (searchParams.query === 'all') {
-      console.log('🔄 [SEARCH] Query is "all", using fetchInitialProducts instead...');
       await fetchInitialProducts();
       return;
     }
@@ -418,15 +421,6 @@ export const useProducts = (params: SearchParams) => {
     }
 
     try {
-      console.log('🔍 [SEARCH] Starting search with params:', {
-        query: searchParams.query || 'all',
-        hasVideo: searchParams.hasVideo,
-        category: searchParams.category,
-        minPrice: searchParams.minPrice,
-        maxPrice: searchParams.maxPrice,
-        target_currency: searchParams.target_currency
-      });
-
       // Use comprehensive search endpoint
       const response = await api.get('/api/search/comprehensive', {
         params: {
@@ -443,27 +437,35 @@ export const useProducts = (params: SearchParams) => {
         },
       });
 
-      console.log('✅ [SEARCH RESPONSE] Received search response:', {
-        success: response.data.success,
-        totalItems: response.data.items?.length || 0,
-        queryType: response.data.query_type,
-        hasMore: response.data.hasMore,
-        currencyConversion: response.data.currency_conversion
-      });
-
       const apiProducts = response.data.items || [];
-      console.log('📦 [SEARCH PROCESSING] Processing', apiProducts.length, 'products from search JSON...');
+      
+      // Debug: Check if is_saved_in_db exists in any product
+      const productsWithFlag = apiProducts.filter((p: any) => p.hasOwnProperty('is_saved_in_db'));
+      console.log(`🔍 [DEBUG] Total products: ${apiProducts.length}, Products with is_saved_in_db flag: ${productsWithFlag.length}`);
+      
+      // Check if any products have is_saved_in_db flag
+      const savedProducts = apiProducts.filter((p: any) => p.is_saved_in_db === true);
+      if (savedProducts.length > 0) {
+        console.log(`📦 ${savedProducts.length} products found in database:`);
+        savedProducts.forEach((p: any) => {
+          console.log(`   - Product ID: ${p.product_id} | Category: ${p.product_category || 'other'}`);
+        });
+      } else {
+        console.log(`⚠️ No products with is_saved_in_db=true found. Checking first 3 products:`, apiProducts.slice(0, 3).map((p: any) => ({
+          product_id: p.product_id,
+          is_saved_in_db: p.is_saved_in_db,
+          product_category: p.product_category,
+          custom_title: p.custom_title
+        })));
+      }
       
       const newProducts = apiProducts.map(mapApiProductToProduct);
-      console.log('🔄 [SEARCH MAPPING] Mapped', newProducts.length, 'products to frontend format');
       
       setAllProducts(newProducts);
-      console.log('💾 [SEARCH STORAGE] Stored', newProducts.length, 'products in allProducts state');
       
       const firstFiveProducts = newProducts.slice(0, 5);
       setDisplayedProducts(firstFiveProducts); // Display only first 5
       setDisplayedCount(5);
-      console.log('👁️ [SEARCH DISPLAY] Displaying first 5 products:', firstFiveProducts.map((p: Product) => ({ id: p.id, title: p.title.substring(0, 30) + '...' })));
       
       // Use the hasMore value from API response
       const apiHasMore = response.data.hasMore !== undefined ? response.data.hasMore : true;

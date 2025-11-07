@@ -40,13 +40,14 @@ const mapApiProductToProduct = (apiProduct: any): Product => {
 
   const mappedProduct = {
     id: apiProduct.product_id?.toString() || '',
-    title: apiProduct.product_title || '',
+    // If custom_title exists in database, use it instead of product_title
+    title: apiProduct.custom_title || apiProduct.product_title || '',
     price: apiProduct.sale_price || 0,
     originalPrice: apiProduct.original_price || undefined,
     currency: apiProduct.sale_price_currency || apiProduct.original_currency || 'USD',
     originalCurrency: apiProduct.original_currency || apiProduct.sale_price_currency || 'USD',
     originalPriceCurrency: apiProduct.original_price_currency || apiProduct.original_price_currency,
-    // Target currency fields (converted prices) - این فیلدها مهم هستند!
+    // Target currency fields (converted prices) - These fields are important!
     priceTarget: apiProduct.sale_price_target || undefined,
     originalPriceTarget: apiProduct.original_price_target || undefined,
     currencyTarget: apiProduct.sale_price_currency_target || undefined,
@@ -69,9 +70,38 @@ const mapApiProductToProduct = (apiProduct: any): Product => {
     scoreStars: apiProduct.product_score_stars || 0,
     firstLevelCategoryName: apiProduct.first_level_category_name || '',
     secondLevelCategoryName: apiProduct.second_level_category_name || '',
+    // productCategory from JSON (final value - already overridden by backend if product exists in DB)
+    // This is the final product_category value that should be used for normalization
     productCategory: apiProduct.product_category || '',
-    customTitle: apiProduct.custom_title || undefined
+    // Set customTitle if it exists in database (to track if product is liked)
+    customTitle: apiProduct.custom_title || (apiProduct.custom_title === null ? null : undefined),
+    // If product is saved in database (is_saved_in_db flag), use product_category as savedProductCategory
+    // The product_category at this point is already from database (overridden by backend)
+    // Check both is_saved_in_db === true and is_saved_in_db === "true" (string) for safety
+    savedProductCategory: (apiProduct.is_saved_in_db === true || apiProduct.is_saved_in_db === "true") ? (apiProduct.product_category || undefined) : undefined,
+    // Flag to indicate if product is saved in database
+    isSavedInDb: apiProduct.is_saved_in_db === true || apiProduct.is_saved_in_db === "true" || false
   };
+  
+  // Debug: Log mapped product for specific product ID
+  if (mappedProduct.id === '1005010266546145') {
+    console.log(`🔍 [MAPPED PRODUCT] Product ${mappedProduct.id}:`, {
+      raw_is_saved_in_db: apiProduct.is_saved_in_db,
+      raw_product_category: apiProduct.product_category,
+      productCategory: mappedProduct.productCategory,
+      savedProductCategory: mappedProduct.savedProductCategory,
+      customTitle: mappedProduct.customTitle,
+      // Log all keys to see what's actually in apiProduct
+      all_apiProduct_keys: Object.keys(apiProduct).filter(k => k.includes('category') || k.includes('saved') || k.includes('custom')),
+      // Log the actual apiProduct object structure
+      apiProduct_sample: JSON.stringify(apiProduct).substring(0, 500)
+    });
+    
+    // If product should be in database but product_category is wrong, log warning
+    if (apiProduct.custom_title && apiProduct.product_category !== 'jewelery' && apiProduct.product_category !== 'other' && apiProduct.product_category !== 'fashion' && apiProduct.product_category !== 'shoes' && apiProduct.product_category !== 'car accessories' && apiProduct.product_category !== 'cellphone') {
+      console.warn(`⚠️ [MAPPED PRODUCT] Product ${mappedProduct.id} has custom_title but product_category is "${apiProduct.product_category}" (expected one of: jewelery, other, fashion, shoes, car accessories, cellphone)`);
+    }
+  }
 
 
   return mappedProduct;
@@ -108,19 +138,10 @@ export const useProductCards = (searchParams: SearchParams) => {
     setError(null);
     
     try {
-      console.log('🌐 [API REQUEST] GET /api/search/comprehensive', {
-        q: searchParams.query,
-        page: 1,
-        pageSize: 200,
-        target_currency: searchParams.target_currency || 'USD',
-        min_price: searchParams.minPrice || 0,
-        max_price: searchParams.maxPrice || 150000,
-        sort_by: searchParams.sortBy || 'volume_desc',
-        only_with_video: searchParams.hasVideo ? 1 : 0,
-        category: searchParams.category || undefined
-      });
+      // Removed verbose logging
 
       // Use comprehensive search endpoint with all parameters
+      console.log(`🔍 [fetchProducts] Sending request with query: "${searchParams.query}"`);
       const response = await api.get('/api/search/comprehensive', {
         params: {
           q: searchParams.query,
@@ -134,43 +155,59 @@ export const useProductCards = (searchParams: SearchParams) => {
           category: searchParams.category || undefined
         }
       });
+      console.log(`🔍 [fetchProducts] Received response with query: "${response.data.query}"`);
 
-      console.log('📊 [TOTAL PRODUCTS] Total products in JSON response:', response.data.total || response.data.items?.length || 0);
-      console.log('🔍 [DEBUG] Raw API response:', {
+      // Debug: Check raw response if available
+      const rawResponseText = (response as any).request?.responseText || '';
+      if (rawResponseText) {
+        try {
+          const rawParsed = JSON.parse(rawResponseText);
+          console.log(`🔍 [RAW RESPONSE CHECK] Raw response has is_saved_in_db:`, rawResponseText.includes('is_saved_in_db'));
+          if (rawParsed.items && rawParsed.items.length > 0) {
+            const firstRawItem = rawParsed.items[0];
+            console.log(`🔍 [RAW RESPONSE CHECK] First product in raw response:`, {
+              product_id: firstRawItem.product_id,
+              has_is_saved_in_db: 'is_saved_in_db' in firstRawItem,
+              is_saved_in_db: firstRawItem.is_saved_in_db,
+              product_category: firstRawItem.product_category
+            });
+            
+            // If raw response has is_saved_in_db but parsed response doesn't, use raw response
+            if ('is_saved_in_db' in firstRawItem && !('is_saved_in_db' in response.data.items[0])) {
+              console.warn(`⚠️ [RAW RESPONSE CHECK] Using raw response because parsed response is missing is_saved_in_db!`);
+              response.data = rawParsed;
+            }
+          }
+        } catch (e) {
+          console.error(`🔍 [RAW RESPONSE CHECK] Error parsing raw response:`, e);
+        }
+      }
+
+      // Removed verbose logging
+
+      // Debug: Log full response structure
+      console.log(`🔍 [FULL RESPONSE] response.data:`, {
         success: response.data.success,
-        total: response.data.total,
-        hasMore: response.data.hasMore,
-        itemsLength: response.data.items?.length,
+        items_count: response.data.items?.length || 0,
         query: response.data.query,
-        filters: response.data.filters
+        query_type: response.data.query_type
       });
-
-      const apiProducts = response.data.items || [];
-      console.log('🔍 [DEBUG] First 3 API products:', apiProducts.slice(0, 3).map((p: any) => ({
-        id: p.product_id,
-        title: p.product_title?.substring(0, 50) + '...',
-        price: p.sale_price,
-        currency: p.sale_price_currency
-      })));
       
+      const apiProducts = response.data.items || [];
+      
+      // Map API products to Product objects
       const mappedProducts = apiProducts.map(mapApiProductToProduct);
       const newProducts = removeDuplicateProducts(mappedProducts);
       
-      console.log('🔍 [DEBUG] First 3 mapped products:', newProducts.slice(0, 3).map((p: Product) => ({
-        id: p.id,
-        title: p.title?.substring(0, 50) + '...',
-        price: p.price,
-        currency: p.currency
-      })));
-      
-      console.log('📊 [LOADING INFO] AllProducts length:', newProducts.length, 'Displayed:', 10, 'HasMore:', newProducts.length > 0);
-      
       setAllProducts(newProducts);
-      setDisplayedProducts(newProducts.slice(0, 10));
-      setDisplayedCount(10);
-      setProducts(newProducts.slice(0, 10));
       
-      const apiHasMore = newProducts.length > 0; // Always true if we have products
+      // Display first 5 products initially
+      const initialDisplay = newProducts.slice(0, 5);
+      setDisplayedProducts(initialDisplay);
+      setDisplayedCount(initialDisplay.length);
+      setProducts(initialDisplay);
+      
+      const apiHasMore = newProducts.length > 5;
       setHasMore(apiHasMore);
       setCurrentPage(1);
 
@@ -181,7 +218,7 @@ export const useProductCards = (searchParams: SearchParams) => {
     }
   }, [searchParams]);
 
-  // Fetch product by ID
+  // Fetch product by ID - Use comprehensive search endpoint instead of /api/product/{id}
   const fetchProductById = useCallback(async (productId: string) => {
     // Clear existing products before starting new search
     clearProducts();
@@ -190,22 +227,70 @@ export const useProductCards = (searchParams: SearchParams) => {
     setError(null);
     
     try {
-      console.log('🌐 [API REQUEST] GET /api/product/' + productId);
-      const response = await api.get(`/api/product/${productId}`);
+      console.log('🌐 [API REQUEST] GET /api/search/comprehensive?q=' + productId);
+      // Use comprehensive search endpoint which correctly handles is_saved_in_db and product_category
+      const response = await api.get('/api/search/comprehensive', {
+        params: {
+          q: productId,
+          page: 1,
+          pageSize: 150,
+          target_currency: searchParams.target_currency || 'USD',
+          min_price: 0,
+          max_price: 150000,
+          only_with_video: searchParams.hasVideo ? 1 : 0,
+          use_api: 'true'
+        },
+      });
 
-      const apiProducts = response.data.items || [];
-      const mappedProducts = apiProducts.map(mapApiProductToProduct);
-      const newProducts = removeDuplicateProducts(mappedProducts);
-      
-      setAllProducts(newProducts);
-      setDisplayedProducts(newProducts);
-      setDisplayedCount(newProducts.length);
-      setProducts(newProducts);
-      
-      // Check if there are more products available
-      const apiHasMore = newProducts.length > 0; // Always true if we have products
-      setHasMore(apiHasMore);
-      setCurrentPage(1);
+      // Debug: Check raw response if available for fetchProductById
+      const rawResponseText = (response as any).request?.responseText || '';
+      if (rawResponseText) {
+        try {
+          const rawParsed = JSON.parse(rawResponseText);
+          console.log(`🔍 [RAW RESPONSE CHECK - fetchProductById] Raw response has is_saved_in_db:`, rawResponseText.includes('is_saved_in_db'));
+          if (rawParsed.items && rawParsed.items.length > 0) {
+            const firstRawItem = rawParsed.items[0];
+            console.log(`🔍 [RAW RESPONSE CHECK - fetchProductById] First product in raw response:`, {
+              product_id: firstRawItem.product_id,
+              has_is_saved_in_db: 'is_saved_in_db' in firstRawItem,
+              is_saved_in_db: firstRawItem.is_saved_in_db,
+              product_category: firstRawItem.product_category
+            });
+            
+            // If raw response has is_saved_in_db but parsed response doesn't, use raw response
+            if (response.data.items && response.data.items.length > 0 && 'is_saved_in_db' in firstRawItem && !('is_saved_in_db' in response.data.items[0])) {
+              console.warn(`⚠️ [RAW RESPONSE CHECK - fetchProductById] Using raw response because parsed response is missing is_saved_in_db!`);
+              response.data = rawParsed;
+            }
+          }
+        } catch (e) {
+          console.error(`🔍 [RAW RESPONSE CHECK - fetchProductById] Error parsing raw response:`, e);
+        }
+      }
+
+      if (response.data.success && response.data.items && response.data.items.length > 0) {
+        const apiProducts = response.data.items;
+        
+        // Map API products to Product objects
+        const mappedProducts = apiProducts.map(mapApiProductToProduct);
+        const newProducts = removeDuplicateProducts(mappedProducts);
+        
+        setAllProducts(newProducts);
+        setDisplayedProducts(newProducts);
+        setDisplayedCount(newProducts.length);
+        setProducts(newProducts);
+        setHasMore(false);
+        setCurrentPage(1);
+      } else {
+        // Product not found
+        setAllProducts([]);
+        setDisplayedProducts([]);
+        setDisplayedCount(0);
+        setProducts([]);
+        setHasMore(false);
+        setError(`Product with ID ${productId} not found`);
+        setCurrentPage(1);
+      }
 
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to fetch product');
@@ -283,9 +368,12 @@ export const useProductCards = (searchParams: SearchParams) => {
 
   // Load products when search params change
   useEffect(() => {
+    console.log(`🔍 [useEffect] searchParams.query: "${searchParams.query}", isProductId: ${isProductId(searchParams.query || '')}`);
     if (searchParams.query && isProductId(searchParams.query)) {
+      console.log(`🔍 [useEffect] Calling fetchProductById with: ${searchParams.query}`);
       fetchProductById(searchParams.query);
     } else {
+      console.log(`🔍 [useEffect] Calling fetchProducts with query: "${searchParams.query}"`);
       fetchProducts();
     }
   }, [

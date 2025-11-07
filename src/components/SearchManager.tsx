@@ -6,12 +6,14 @@ import { useCurrency } from '../hooks/useCurrency';
 import type { Product } from '../types';
 
 interface SearchManagerProps {
-  onLike?: (productId: string) => void;
+  onLike?: (productId: string, selectedCategory?: string) => void;
   onShare?: (product: Product) => void;
   onBuy?: (product: Product) => void;
   onTitleChange?: (productId: string, newTitle: string) => void;
+  onCategoryChange?: (productId: string, newCategory: string) => void;
   isLiked?: (productId: string) => boolean;
   likedProducts?: Set<string>;
+  productCategories?: Map<string, string>;
   showDebug?: boolean;
   searchParams: any;
 }
@@ -21,8 +23,10 @@ export const SearchManager: React.FC<SearchManagerProps> = ({
   onShare,
   onBuy,
   onTitleChange,
+  onCategoryChange,
   isLiked,
   likedProducts = new Set(),
+  productCategories = new Map(),
   showDebug = false,
   searchParams
 }) => {
@@ -212,7 +216,9 @@ export const SearchManager: React.FC<SearchManagerProps> = ({
         onShare={onShare}
         onBuy={onBuy}
         onTitleChange={onTitleChange}
+        onCategoryChange={onCategoryChange}
         isLiked={isLiked}
+        productCategories={productCategories}
         showDebug={showDebug}
       />
     </div>
